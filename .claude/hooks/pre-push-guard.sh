@@ -30,5 +30,6 @@ fi
 if [[ $SKIPPED -eq 0 ]]; then
   echo "=== pre-push: ALL PASSED ==="
 else
-  echo "=== pre-push: DONE (some checks skipped — install deps to run full suite) ==="
+  echo "=== pre-push: BLOCKED — install missing deps then retry (see SKIP warnings above) ==="
+  exit 1
 fi
