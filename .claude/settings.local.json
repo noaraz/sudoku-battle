@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/pre-commit-guard.sh /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/pre-push-guard.sh /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/post-python-edit.sh /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/post-ts-edit.sh)",
+      "Bash(python3 -c \"import json; json.load\\(open\\(''/Users/noa.raz/workspace/sudoku-battle/.claude/settings.json''\\)\\); print\\(''JSON valid''\\)\")",
+      "Bash(git add:*)"
+    ]
+  }
+}
