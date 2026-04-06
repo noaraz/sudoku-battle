@@ -6,7 +6,9 @@ ROOT="$(git rev-parse --show-toplevel)"
 
 echo "=== pre-commit: backend pytest ==="
 cd "$ROOT/backend"
-if [[ -x ".venv/bin/pytest" ]]; then
+if [[ ! -d "app" ]]; then
+  echo "SKIP: backend/app not found — no Python code yet"
+elif [[ -x ".venv/bin/pytest" ]]; then
   .venv/bin/pytest -q
 else
   echo "SKIP: backend/.venv not found — run: cd backend && python -m venv .venv && pip install -e '.[dev]'"
@@ -15,7 +17,9 @@ fi
 
 echo "=== pre-commit: frontend vitest ==="
 cd "$ROOT/frontend"
-if [[ -d "node_modules" ]]; then
+if [[ ! -d "src" ]]; then
+  echo "SKIP: frontend/src not found — no TypeScript code yet"
+elif [[ -d "node_modules" ]]; then
   npx vitest run --reporter=dot
 else
   echo "SKIP: frontend/node_modules not found — run: cd frontend && npm install"

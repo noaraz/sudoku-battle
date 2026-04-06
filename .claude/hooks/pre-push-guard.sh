@@ -11,7 +11,9 @@ SKIPPED=0
 
 echo "=== pre-push: frontend tsc ==="
 cd "$ROOT/frontend"
-if [[ -d "node_modules" ]]; then
+if [[ ! -d "src" ]]; then
+  echo "SKIP: frontend/src not found — no TypeScript code yet"
+elif [[ -d "node_modules" ]]; then
   npx tsc --noEmit
 else
   echo "WARNING: tsc SKIPPED — frontend/node_modules not found"
@@ -20,7 +22,9 @@ fi
 
 echo "=== pre-push: backend mypy ==="
 cd "$ROOT/backend"
-if [[ -x ".venv/bin/mypy" ]]; then
+if [[ ! -d "app" ]]; then
+  echo "SKIP: backend/app not found — no Python code yet"
+elif [[ -x ".venv/bin/mypy" ]]; then
   .venv/bin/mypy app/
 else
   echo "WARNING: mypy SKIPPED — not found in backend/.venv"
