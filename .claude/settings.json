@@ -1,0 +1,77 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | python3 -c \"import json,sys; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))\" 2>/dev/null); if echo \"$CMD\" | grep -qE '^git commit'; then bash .claude/hooks/pre-commit-guard.sh; fi",
+            "statusMessage": "Running pre-commit checks (pytest + vitest)...",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); CMD=$(echo \"$INPUT\" | python3 -c \"import json,sys; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))\" 2>/dev/null); if echo \"$CMD\" | grep -qE '^git push'; then bash .claude/hooks/pre-push-guard.sh; fi",
+            "statusMessage": "Running pre-push checks (tsc + mypy)...",
+            "timeout": 180
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-python-edit.sh",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-ts-edit.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(backend/.venv/bin/*)",
+      "Bash(.venv/bin/*)",
+      "Bash(uvicorn*)",
+      "Bash(gcloud*)",
+      "Bash(npm*)",
+      "Bash(npx*)",
+      "Bash(node*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git add*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git stash*)",
+      "Bash(git rm*)",
+      "Bash(git show*)",
+      "Bash(bash scripts/*)",
+      "Bash(bash .claude/hooks/*)",
+      "Bash(chmod*)",
+      "Bash(mkdir*)",
+      "Bash(rm*)",
+      "Bash(cp*)",
+      "Bash(mv*)",
+      "Agent"
+    ],
+    "deny": [
+      "Bash(git commit --no-verify*)",
+      "Bash(git push --force*)"
+    ]
+  }
+}
