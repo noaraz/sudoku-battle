@@ -1,0 +1,4 @@
+#!/bin/bash
+# Tracked git pre-commit hook — install via: bash scripts/setup-hooks.sh
+set -e
+exec bash "$(git rev-parse --show-toplevel)/.claude/hooks/pre-commit-guard.sh"
