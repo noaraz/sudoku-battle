@@ -21,6 +21,7 @@ Competitive 2-player Sudoku. Players join a room, get the same puzzle, race to f
 sudoku-battle/
 ├── CLAUDE.md           # This file
 ├── STATUS.md           # Progress tracker
+├── PLAN.md             # Future work (CI steps, features not yet implemented)
 ├── backend/
 │   ├── CLAUDE.md       # Backend context + plan
 │   └── app/            # FastAPI app
