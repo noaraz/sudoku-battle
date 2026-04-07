@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # Python backend
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-deps:
+        patterns: ["pytest*", "mypy", "ruff", "pip-audit"]
+
+  # Node frontend
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-deps:
+        patterns: ["vitest*", "@vitest/*", "eslint*", "typescript", "@types/*"]
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
