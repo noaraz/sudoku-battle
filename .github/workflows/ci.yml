@@ -8,7 +8,7 @@ on:
 jobs:
   # ── Backend ────────────────────────────────────────────────────────────────
   backend:
-    name: Backend (pytest · mypy · ruff)
+    name: Backend (pytest · mypy · ruff · pip-audit)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,18 +25,24 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      - name: pytest
-        run: pytest -q
+      - name: pytest (with coverage)
+        run: pytest -q --cov=app --cov-fail-under=80
 
       - name: mypy
         run: mypy app/
 
-      - name: ruff
+      - name: ruff lint
         run: ruff check app/
+
+      - name: ruff format
+        run: ruff format --check app/
+
+      - name: pip-audit
+        run: pip install pip-audit && pip-audit
 
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
-    name: Frontend (vitest · tsc · eslint)
+    name: Frontend (vitest · tsc · eslint · npm-audit)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,14 +60,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: vitest
-        run: npx vitest run --reporter=dot
+      - name: vitest (with coverage)
+        run: npx vitest run --reporter=dot --coverage --coverage.thresholds.lines=80
 
       - name: tsc
         run: npx tsc --noEmit
 
       - name: eslint
         run: npx eslint src/
+
+      - name: npm audit
+        run: npm audit --audit-level=high
 
   # ── Docker build ───────────────────────────────────────────────────────────
   docker:
