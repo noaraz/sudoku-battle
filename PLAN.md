@@ -1,4 +1,4 @@
-# Claude Plan
+# Plan
 
 ## CI — Future Steps
 
