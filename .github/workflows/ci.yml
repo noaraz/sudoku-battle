@@ -10,9 +10,33 @@ permissions:
   pull-requests: write  # needed to post coverage comments
 
 jobs:
+  # ── Detect changed paths ───────────────────────────────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            docker:
+              - 'Dockerfile*'
+              - 'docker-compose*'
+
   # ── Backend ────────────────────────────────────────────────────────────────
   backend:
     name: Backend (pytest · mypy · ruff · pip-audit)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,6 +78,8 @@ jobs:
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
     name: Frontend (vitest · tsc · eslint · npm-audit)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -92,6 +118,8 @@ jobs:
   # ── Docker build ───────────────────────────────────────────────────────────
   docker:
     name: Docker build
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
