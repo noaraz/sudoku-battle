@@ -3,6 +3,9 @@
 ## Spec
 See [First Logic Phases Design](../docs/superpowers/specs/2026-04-10-first-logic-phases-design.md)
 
+## Implementation Plan
+See [Phase 0 + Phase 1: Solo Play](../docs/superpowers/plans/2026-04-10-phase-0-1-solo-play.md)
+
 ---
 
 ## Phase 0: Project Init
