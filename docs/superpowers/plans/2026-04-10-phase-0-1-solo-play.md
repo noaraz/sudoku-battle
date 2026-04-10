@@ -10,6 +10,112 @@
 
 **Spec:** [First Logic Phases Design](../specs/2026-04-10-first-logic-phases-design.md)
 
+**Dev workflow:** All commands run inside Docker. Never install or run anything directly on the host. Use `docker compose run --rm <service> <cmd>` for one-off commands and `docker compose up` to start dev servers.
+
+---
+
+## Chunk 0: Docker Setup
+
+### Task 0: Dockerfiles + docker-compose.yml
+
+**Files:**
+- Create: `backend/Dockerfile`
+- Create: `frontend/Dockerfile`
+- Create: `docker-compose.yml`
+- Create: `.dockerignore`
+
+This task must be completed before all others — all subsequent tasks run their commands inside Docker.
+
+- [ ] **Step 1: Create `backend/Dockerfile`**
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY pyproject.toml .
+RUN pip install --no-cache-dir -e ".[dev]"
+
+COPY . .
+```
+
+- [ ] **Step 2: Create `frontend/Dockerfile`**
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+```
+
+- [ ] **Step 3: Create `docker-compose.yml`**
+
+```yaml
+services:
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+    depends_on:
+      - firestore
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host 0.0.0.0
+
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    ports:
+      - "8080:8080"
+    command: >
+      gcloud emulators firestore start
+      --host-port=0.0.0.0:8080
+      --project=sudoku-battle
+```
+
+- [ ] **Step 4: Create `.dockerignore`**
+
+```
+**/__pycache__
+**/*.pyc
+**/.mypy_cache
+**/.pytest_cache
+**/node_modules
+**/dist
+**/.git
+```
+
+- [ ] **Step 5: Verify Docker builds**
+
+```bash
+docker compose build
+```
+
+Expected: both `backend` and `frontend` images build successfully.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add backend/Dockerfile frontend/Dockerfile docker-compose.yml .dockerignore
+git commit -m "chore: add Docker setup for local development"
+```
+
 ---
 
 ## Chunk 1: Phase 0 — Project Init
@@ -146,21 +252,19 @@ def test_app_starts(client: TestClient) -> None:
     assert response.status_code == 200
 ```
 
-- [ ] **Step 9: Install dependencies and run tests**
+- [ ] **Step 9: Build and run tests inside Docker**
 
 ```bash
-cd backend
-pip install -e ".[dev]"
-pytest -q
+docker compose build backend
+docker compose run --rm backend pytest -q
 ```
 
 Expected: `1 passed`
 
-- [ ] **Step 10: Verify mypy**
+- [ ] **Step 10: Verify mypy inside Docker**
 
 ```bash
-cd backend
-mypy app/
+docker compose run --rm backend mypy app/
 ```
 
 Expected: `Success: no issues found`
@@ -187,27 +291,31 @@ git commit -m "feat: backend scaffold — FastAPI skeleton + pytest setup"
 
 - [ ] **Step 1: Scaffold Vite project**
 
-Run inside the `frontend/` directory. When asked to remove existing files (CLAUDE.md, PLAN.md), say **No** — then use the second approach below.
+Use a temporary `node:20-alpine` container (the frontend Docker image doesn't exist yet — it needs `package.json` first). Preserve `CLAUDE.md` and `PLAN.md` by saving them before the scaffold and restoring them after.
 
 ```bash
-# Preserve CLAUDE.md and PLAN.md, then scaffold around them:
-cd frontend
-cp CLAUDE.md /tmp/frontend-CLAUDE.md
-cp PLAN.md /tmp/frontend-PLAN.md
-npm create vite@latest . -- --template react-ts
-# Choose "y" to remove existing files
-cp /tmp/frontend-CLAUDE.md CLAUDE.md
-cp /tmp/frontend-PLAN.md PLAN.md
+# Preserve CLAUDE.md and PLAN.md
+cp frontend/CLAUDE.md /tmp/frontend-CLAUDE.md
+cp frontend/PLAN.md /tmp/frontend-PLAN.md
+
+# Scaffold Vite inside a temporary node container (volume-mounted to host)
+docker run --rm -v "$(pwd)/frontend:/app" -w /app node:20-alpine \
+  npx create-vite@latest . --template react-ts --force
+
+# Restore project files
+cp /tmp/frontend-CLAUDE.md frontend/CLAUDE.md
+cp /tmp/frontend-PLAN.md frontend/PLAN.md
 ```
 
-- [ ] **Step 2: Install dependencies**
+- [ ] **Step 2: Install dependencies and build Docker image**
 
 ```bash
-cd frontend
-npm install
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-npm install -D vitest @vitest/ui jsdom @testing-library/react @testing-library/user-event @testing-library/jest-dom
+# Install all deps inside a temporary node container
+docker run --rm -v "$(pwd)/frontend:/app" -w /app node:20-alpine sh -c \
+  "npm install && npm install -D tailwindcss postcss autoprefixer vitest @vitest/ui jsdom @testing-library/react @testing-library/user-event @testing-library/jest-dom"
+
+# Now that package.json and node_modules exist, build the frontend Docker image
+docker compose build frontend
 ```
 
 - [ ] **Step 3: Configure Tailwind — `frontend/tailwind.config.ts`**
@@ -258,6 +366,7 @@ import '@testing-library/jest-dom'
 - [ ] **Step 7: Scaffold `src/` directory structure**
 
 ```bash
+# Run on host — just creates empty directories
 mkdir -p frontend/src/{models,viewmodels,views,services,utils}
 ```
 
@@ -290,7 +399,7 @@ test('app renders without crashing', () => {
 - [ ] **Step 10: Run tests**
 
 ```bash
-cd frontend && npx vitest run
+docker compose run --rm frontend npx vitest run
 ```
 
 Expected: `1 passed`
@@ -298,7 +407,7 @@ Expected: `1 passed`
 - [ ] **Step 11: Verify TypeScript**
 
 ```bash
-cd frontend && npx tsc --noEmit
+docker compose run --rm frontend npx tsc --noEmit
 ```
 
 Expected: no errors
@@ -343,7 +452,7 @@ export type RawBoard = number[][]
 - [ ] **Step 2: Verify TypeScript**
 
 ```bash
-cd frontend && npx tsc --noEmit
+docker compose run --rm frontend npx tsc --noEmit
 ```
 
 - [ ] **Step 3: Commit**
@@ -396,7 +505,7 @@ describe('mulberry32', () => {
 - [ ] **Step 2: Run — expect FAIL**
 
 ```bash
-cd frontend && npx vitest run src/utils/puzzle.test.ts
+docker compose run --rm frontend npx vitest run src/utils/puzzle.test.ts
 ```
 
 Expected: `mulberry32 is not exported`
@@ -419,7 +528,7 @@ export function mulberry32(seed: number): () => number {
 - [ ] **Step 4: Run — expect PASS**
 
 ```bash
-cd frontend && npx vitest run src/utils/puzzle.test.ts
+docker compose run --rm frontend npx vitest run src/utils/puzzle.test.ts
 ```
 
 #### 4b: Board validity — `isValidPlacement`
@@ -738,13 +847,13 @@ export function generatePuzzle(
 - [ ] **Step 4: Run — expect PASS**
 
 ```bash
-cd frontend && npx vitest run src/utils/puzzle.test.ts
+docker compose run --rm frontend npx vitest run src/utils/puzzle.test.ts
 ```
 
 - [ ] **Step 5: Verify TypeScript**
 
 ```bash
-cd frontend && npx tsc --noEmit
+docker compose run --rm frontend npx tsc --noEmit
 ```
 
 - [ ] **Step 6: Commit**
@@ -831,7 +940,7 @@ export function saveBestTime(difficulty: Difficulty, seconds: number): void {
 - [ ] **Step 4: Run — expect PASS**
 
 ```bash
-cd frontend && npx vitest run src/utils/bestTimes.test.ts
+docker compose run --rm frontend npx vitest run src/utils/bestTimes.test.ts
 ```
 
 - [ ] **Step 5: Commit**
@@ -936,7 +1045,7 @@ describe('useGame — initial state', () => {
 - [ ] **Step 2: Run — expect FAIL**
 
 ```bash
-cd frontend && npx vitest run src/viewmodels/useGame.test.ts
+docker compose run --rm frontend npx vitest run src/viewmodels/useGame.test.ts
 ```
 
 - [ ] **Step 3: Create `frontend/src/viewmodels/useGame.ts`**
@@ -1121,7 +1230,7 @@ export function useGame(seed: number, difficulty: Difficulty): GameViewModel {
 - [ ] **Step 4: Run initial state tests — expect PASS**
 
 ```bash
-cd frontend && npx vitest run src/viewmodels/useGame.test.ts
+docker compose run --rm frontend npx vitest run src/viewmodels/useGame.test.ts
 ```
 
 #### 7b: inputNumber — default mode
@@ -1339,7 +1448,7 @@ describe('useGame — isComplete', () => {
 - [ ] **Step 13: Run full test suite**
 
 ```bash
-cd frontend && npx vitest run
+docker compose run --rm frontend npx vitest run
 ```
 
 Expected: all tests pass.
@@ -1347,7 +1456,7 @@ Expected: all tests pass.
 - [ ] **Step 14: Verify TypeScript**
 
 ```bash
-cd frontend && npx tsc --noEmit
+docker compose run --rm frontend npx tsc --noEmit
 ```
 
 - [ ] **Step 15: Commit**
@@ -1421,7 +1530,7 @@ describe('useTheme', () => {
 - [ ] **Step 2: Run — expect FAIL**
 
 ```bash
-cd frontend && npx vitest run src/viewmodels/useTheme.test.ts
+docker compose run --rm frontend npx vitest run src/viewmodels/useTheme.test.ts
 ```
 
 - [ ] **Step 3: Create `frontend/src/viewmodels/useTheme.ts`**
@@ -1456,7 +1565,7 @@ export function useTheme() {
 - [ ] **Step 4: Run — expect PASS**
 
 ```bash
-cd frontend && npx vitest run src/viewmodels/useTheme.test.ts
+docker compose run --rm frontend npx vitest run src/viewmodels/useTheme.test.ts
 ```
 
 - [ ] **Step 5: Commit**
@@ -1922,7 +2031,7 @@ export default function App() {
 - [ ] **Step 2: Run full test suite**
 
 ```bash
-cd frontend && npx vitest run
+docker compose run --rm frontend npx vitest run
 ```
 
 Expected: all tests pass.
@@ -1930,7 +2039,7 @@ Expected: all tests pass.
 - [ ] **Step 3: Verify TypeScript**
 
 ```bash
-cd frontend && npx tsc --noEmit
+docker compose run --rm frontend npx tsc --noEmit
 ```
 
 Expected: no errors.
@@ -1938,7 +2047,7 @@ Expected: no errors.
 - [ ] **Step 4: Start dev server and manually verify**
 
 ```bash
-cd frontend && npm run dev
+docker compose up frontend
 ```
 
 Open `http://localhost:5173`. Verify:
