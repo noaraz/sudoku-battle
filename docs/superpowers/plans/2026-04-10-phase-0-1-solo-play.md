@@ -516,9 +516,10 @@ describe('hasUniqueSolution', () => {
   })
 
   it('returns false for a board with multiple solutions', () => {
-    // A board with very few clues has many solutions.
-    // 4 clues in separate rows, columns, and boxes guarantees ambiguity
-    // and the solver finds a 2nd solution quickly (no long search).
+    // Mathematical fact: a Sudoku with fewer than 17 clues CANNOT have a
+    // unique solution (proven by McGuire et al., 2012). A 4-clue board
+    // is therefore guaranteed to have multiple solutions. The solver also
+    // finds the 2nd solution quickly on a sparse board (short search path).
     const board: RawBoard = Array.from({ length: 9 }, () => Array(9).fill(0))
     board[0][0] = 1
     board[1][3] = 2
