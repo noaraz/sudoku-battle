@@ -3,7 +3,16 @@
     "allow": [
       "Bash(chmod +x /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/pre-commit-guard.sh /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/pre-push-guard.sh /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/post-python-edit.sh /Users/noa.raz/workspace/sudoku-battle/.claude/hooks/post-ts-edit.sh)",
       "Bash(python3 -c \"import json; json.load\\(open\\(''/Users/noa.raz/workspace/sudoku-battle/.claude/settings.json''\\)\\); print\\(''JSON valid''\\)\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(gh api:*)",
+      "Bash(chmod +x /Users/noa.raz/workspace/sudoku-battle/git-hooks/pre-commit /Users/noa.raz/workspace/sudoku-battle/git-hooks/pre-push /Users/noa.raz/workspace/sudoku-battle/scripts/setup-hooks.sh)",
+      "Bash(bash scripts/setup-hooks.sh)",
+      "Bash(mkdir -p /Users/noa.raz/workspace/sudoku-battle/.git/hooks)",
+      "Bash(bash /Users/noa.raz/workspace/sudoku-battle/scripts/setup-hooks.sh)",
+      "Bash(python3 -c \"import json; json.load\\(open\\(''''.claude/settings.json''''\\)\\); print\\(''''settings.json: OK''''\\)\")",
+      "Skill(claude-md-management:revise-claude-md)",
+      "Skill(claude-md-management:revise-claude-md:*)",
+      "Bash(git push:*)"
     ]
   }
 }
