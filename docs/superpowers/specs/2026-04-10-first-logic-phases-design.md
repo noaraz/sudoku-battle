@@ -162,15 +162,18 @@ toggleLightning(): void
 | Behavior | Condition |
 |----------|-----------|
 | `inputNumber(n)` places `n` in `selectedCell` | Default mode |
-| `inputNumber(n)` arms `lightningNum = n` | Lightning mode |
+| `inputNumber(n)` arms `lightningNum = n` | Lightning mode, no number armed yet |
+| `inputNumber(n)` switches `lightningNum` to `n`, clears `selectedCell` | Lightning mode, different number already armed |
 | `selectCell(r, c)` places `lightningNum` in cell | Lightning mode + number armed |
 | `undo()` pops `undoHistory` and reverts board | Unlimited stack |
 | `erase()` clears `selectedCell` | Default mode, non-given cell |
+| `erase()` is a no-op | Lightning mode (button hidden, action guarded) |
 | Given cells ignore `inputNumber` and `erase` | `cell.given === true` |
 | `isComplete` is true only when all cells filled and all correct | — |
 | `numRemaining[n]` decreases as `n` is placed | Computed from board state |
 | `cell.isError` set immediately on placement | Compared to `solution` |
 | Timer starts on first `inputNumber` call | Not on mount |
+| Timer stops when `isComplete` becomes true | Final time is preserved in state |
 | `isFinished` set when `isComplete` transitions to true | Triggers result screen |
 
 ### Views (`src/views/`)
@@ -211,7 +214,20 @@ Simple state machine in `App.tsx` — no router library needed yet.
 type Screen = 'lobby' | 'game' | 'results'
 ```
 
-Lobby generates `seed = Date.now()` and transitions to game. Results shows time and personal best from `localStorage` (keyed by difficulty).
+Lobby generates `seed = Date.now()` and transitions to game. Results shows time and personal best from `localStorage`.
+
+**Personal best storage contract:**
+
+```typescript
+// Key format: "sudoku_best_<difficulty>"  e.g. "sudoku_best_easy"
+// Value: JSON-serialized number (seconds)
+
+// Utilities in src/utils/bestTimes.ts:
+function getBestTime(difficulty: Difficulty): number | null
+function saveBestTime(difficulty: Difficulty, seconds: number): void
+```
+
+`ResultsScreen` calls `getBestTime(difficulty)` on mount and `saveBestTime` if the current time beats the stored best.
 
 ### useTheme hook (`src/viewmodels/useTheme.ts`)
 
@@ -264,7 +280,8 @@ WAITING → READY → COUNTDOWN → PLAYING → FINISHED → (deleted)
 - `app/services/room_service.py` — room creation, join logic, result handling
 - `app/websocket/room_handler.py` — WebSocket message dispatch:
   - Client → server: `CREATE_ROOM`, `JOIN_ROOM`, `SUBMIT_RESULT`
-  - Server → client: `ROOM_STATE`, `COUNTDOWN`, `OPPONENT_FINISHED`, `GAME_RESULTS`
+  - Server → client: `ROOM_STATE`, `COUNTDOWN`, `OPPONENT_FINISHED`, `GAME_RESULTS`, `ERROR`
+  - `ERROR` payload: `{ type: "ERROR", code: string, message: string }` — sent on auth failure at connect, room not found, or invalid message; client surfaces as a toast/alert and does not crash
 - `WS /ws/room/{room_id}?name=X&pin=Y` endpoint (auth on connect)
 - Atomic batch write: update both players' `wins`/`played` + delete room
 - Tests: full room lifecycle via WebSocket test client
@@ -281,14 +298,19 @@ WAITING → READY → COUNTDOWN → PLAYING → FINISHED → (deleted)
 
 ## Phase 4: Polish + Integration
 
-**Milestone:** Production-quality on mobile (max-width 420px).
+**Milestone:** App passes all acceptance criteria below on a real mobile viewport (375px).
 
-- Mobile layout validation
-- Exact dark/light theme precision (colors, transitions)
-- Full board styling: thick 3×3 box borders, precise cell highlight colors per spec
-- Error handling: network timeouts, WS disconnection + reconnect, invalid server responses
-- Atomic Firestore writes verified end-to-end
-- `FIRESTORE_EMULATOR_HOST` env wiring consistent across all environments
+**Acceptance criteria:**
+
+| Area | Criteria |
+|------|----------|
+| Layout | Board + NumPad + ActionBar fit without horizontal scroll at 375px width |
+| Theme | Dark and light themes both correct; toggle persists across reload |
+| Board styling | 3×3 box borders visually distinct from cell borders; all 6 cell states render correctly |
+| Error UX | Network timeout shows user-facing message, does not crash |
+| WS reconnect | Disconnecting and reconnecting mid-game resumes correct state |
+| Firestore integrity | Batch write (leaderboard update + room delete) verified atomic via emulator test |
+| Env config | `FIRESTORE_EMULATOR_HOST` respected in test, local, and Cloud Run environments |
 
 ---
 
@@ -310,6 +332,6 @@ WAITING → READY → COUNTDOWN → PLAYING → FINISHED → (deleted)
 | File | Purpose |
 |------|---------|
 | `docs/GAME_SPEC.md` | Full game specification (authoritative) |
-| `backend/PLAN.md` | Backend phase tasks (references this spec) |
-| `frontend/PLAN.md` | Frontend phase tasks (references this spec) |
+| `backend/PLAN.md` | Backend phase task checklist (references this spec; created alongside this doc) |
+| `frontend/PLAN.md` | Frontend phase task checklist (references this spec; created alongside this doc) |
 | `STATUS.md` | Current phase tracker |
