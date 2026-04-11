@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+    depends_on:
+      - firestore
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host 0.0.0.0
+
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    ports:
+      - "8080:8080"
+    command: >
+      gcloud emulators firestore start
+      --host-port=0.0.0.0:8080
+      --project=sudoku-battle
