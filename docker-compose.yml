@@ -34,7 +34,8 @@ services:
       --host-port=0.0.0.0:8080
       --project=sudoku-battle
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/v1/projects/sudoku-battle/databases/(default)/documents"]
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 10s
