@@ -1,5 +1,18 @@
 # Plan
 
+## Release
+
+When ready to ship to production, create `.claude/commands/release.md` (modelled on the garmin-coach release command at `/Users/noa.raz/workspace/my-garmin-coach/.claude/commands/release.md`).
+
+Steps it should cover:
+1. Pre-flight (clean main, full test suite, build check)
+2. Version bump (`frontend/package.json` + `STATUS.md`) via release branch + PR
+3. Annotated git tag
+4. `gcloud run deploy sudoku-battle --source . --region=me-west1`
+5. Post-deploy smoke check (Cloud Run URL, puzzle playable, results screen)
+
+---
+
 ## CI — Future Steps
 
 ### E2E Tests (Playwright)
