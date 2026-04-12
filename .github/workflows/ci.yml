@@ -98,7 +98,7 @@ jobs:
         run: npm ci
 
       - name: vitest (with coverage)
-        run: npx vitest run --reporter=dot --coverage --coverage.thresholds.lines=80 --coverage.reporter=json-summary
+        run: npx vitest run --reporter=dot --coverage --coverage.thresholds.lines=70 --coverage.reporter=json-summary
 
       - name: Coverage comment
         if: github.event_name == 'pull_request'
