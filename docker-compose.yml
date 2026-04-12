@@ -27,6 +27,7 @@ services:
 
   firestore:
     image: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    platform: linux/amd64
     ports:
       - "8080:8080"
     command: >
