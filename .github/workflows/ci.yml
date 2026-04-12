@@ -95,7 +95,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: vitest (with coverage)
         run: npx vitest run --reporter=dot --coverage --coverage.thresholds.lines=70 --coverage.reporter=json-summary
@@ -116,19 +116,20 @@ jobs:
         run: npm audit --audit-level=high
 
   # ── Docker build ───────────────────────────────────────────────────────────
-  docker:
-    name: Docker build
-    needs: changes
-    if: needs.changes.outputs.docker == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: docker/setup-buildx-action@v4
-      - name: Build image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: false
+  # TODO(Phase 5): enable once a root Dockerfile exists for Cloud Run production build
+  # docker:
+  #   name: Docker build
+  #   needs: changes
+  #   if: needs.changes.outputs.docker == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - uses: docker/setup-buildx-action@v4
+  #     - name: Build image
+  #       uses: docker/build-push-action@v7
+  #       with:
+  #         context: .
+  #         push: false
 
   # ── E2E (Playwright) ───────────────────────────────────────────────────────
   # TODO: enable once the app has a working UI
