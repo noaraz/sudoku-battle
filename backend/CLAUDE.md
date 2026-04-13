@@ -65,3 +65,9 @@ async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
     ...  # use c.post(), c.get() etc.
 ```
 Use this instead of TestClient — works with async routes.
+
+## Env Var Sync Rule
+
+Every new setting added to `app/core/config.py` **must** be added to `backend/.env.example`
+(with an explanatory comment) in the same commit. This keeps the documented config and the
+implementation in lock-step.
