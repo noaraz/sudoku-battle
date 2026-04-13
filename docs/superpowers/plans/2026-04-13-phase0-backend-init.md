@@ -108,10 +108,12 @@ GCP_PROJECT_ID=sudoku-battle-local
 # - local host (uvicorn on host → Docker emulator): localhost:8080
 FIRESTORE_EMULATOR_HOST=localhost:8080
 
-# Comma-separated list of allowed CORS origins (no trailing slashes)
+# JSON array of allowed CORS origins — required by pydantic-settings v2 for list[str] fields.
+# Add multiple origins as: ["https://origin1.com","https://origin2.com"]
+# No trailing slashes.
 # - local: the Vite dev server port
 # - production: https://<your-cloud-run-service-url>
-CORS_ORIGINS=http://localhost:5174
+CORS_ORIGINS=["http://localhost:5174"]
 
 # Port for uvicorn when running locally (outside docker-compose)
 # Cloud Run ignores this — it always injects PORT=8080 automatically
@@ -124,7 +126,7 @@ PORT=8001
 APP_ENV=local
 GCP_PROJECT_ID=sudoku-battle-local
 FIRESTORE_EMULATOR_HOST=localhost:8080
-CORS_ORIGINS=http://localhost:5174
+CORS_ORIGINS=["http://localhost:5174"]
 PORT=8001
 ```
 
