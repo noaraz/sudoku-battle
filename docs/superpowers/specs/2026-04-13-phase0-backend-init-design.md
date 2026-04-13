@@ -306,6 +306,12 @@ cd backend && mypy app/
 
 ---
 
+## Implementation Plan
+
+`docs/superpowers/plans/2026-04-13-phase0-backend-init.md`
+
+---
+
 ## What Is NOT in Phase 0
 
 - No auth endpoints (Phase 2)
