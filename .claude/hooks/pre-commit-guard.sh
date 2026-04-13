@@ -3,27 +3,28 @@
 set -e
 
 ROOT="$(git rev-parse --show-toplevel)"
+DOCKER="$(command -v docker 2>/dev/null || echo /Applications/Docker.app/Contents/Resources/bin/docker)"
 
 echo "=== pre-commit: backend pytest ==="
-cd "$ROOT/backend"
-if [[ ! -d "app" ]]; then
+cd "$ROOT"
+if [[ ! -d "backend/app" ]]; then
   echo "SKIP: backend/app not found — no Python code yet"
-elif [[ -x ".venv/bin/pytest" ]]; then
-  .venv/bin/pytest -q
+elif "$DOCKER" compose run --rm --no-deps backend pytest -q; then
+  echo "pytest: PASSED"
 else
-  echo "SKIP: backend/.venv not found — run: cd backend && python -m venv .venv && pip install -e '.[dev]'"
-  exit 0
+  echo "pytest: FAILED"
+  exit 1
 fi
 
 echo "=== pre-commit: frontend vitest ==="
-cd "$ROOT/frontend"
-if [[ ! -d "src" ]]; then
+cd "$ROOT"
+if [[ ! -d "frontend/src" ]]; then
   echo "SKIP: frontend/src not found — no TypeScript code yet"
-elif [[ -d "node_modules" ]]; then
-  npx vitest run --reporter=dot
+elif "$DOCKER" compose run --rm frontend npx vitest run --reporter=dot; then
+  echo "vitest: PASSED"
 else
-  echo "SKIP: frontend/node_modules not found — run: cd frontend && npm install"
-  exit 0
+  echo "vitest: FAILED"
+  exit 1
 fi
 
 echo "=== pre-commit: PASSED ==="

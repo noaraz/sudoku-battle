@@ -9,26 +9,28 @@ bash "$ROOT/.claude/hooks/pre-commit-guard.sh"
 
 SKIPPED=0
 
+DOCKER="$(command -v docker 2>/dev/null || echo /Applications/Docker.app/Contents/Resources/bin/docker)"
+
 echo "=== pre-push: frontend tsc ==="
-cd "$ROOT/frontend"
-if [[ ! -d "src" ]]; then
+cd "$ROOT"
+if [[ ! -d "frontend/src" ]]; then
   echo "SKIP: frontend/src not found — no TypeScript code yet"
-elif [[ -d "node_modules" ]]; then
-  npx tsc --noEmit
+elif "$DOCKER" compose run --rm --no-deps frontend npx tsc --noEmit; then
+  echo "tsc: PASSED"
 else
-  echo "WARNING: tsc SKIPPED — frontend/node_modules not found"
-  SKIPPED=1
+  echo "tsc: FAILED"
+  exit 1
 fi
 
 echo "=== pre-push: backend mypy ==="
-cd "$ROOT/backend"
-if [[ ! -d "app" ]]; then
+cd "$ROOT"
+if [[ ! -d "backend/app" ]]; then
   echo "SKIP: backend/app not found — no Python code yet"
-elif [[ -x ".venv/bin/mypy" ]]; then
-  .venv/bin/mypy app/
+elif "$DOCKER" compose run --rm --no-deps backend mypy app/; then
+  echo "mypy: PASSED"
 else
-  echo "WARNING: mypy SKIPPED — not found in backend/.venv"
-  SKIPPED=1
+  echo "mypy: FAILED"
+  exit 1
 fi
 
 if [[ $SKIPPED -eq 0 ]]; then
