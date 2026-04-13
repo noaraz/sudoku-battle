@@ -286,7 +286,27 @@ git commit -m "test: upgrade conftest to async AsyncClient; add failing /health 
 **Files:**
 - Modify: `backend/app/main.py`
 
-- [ ] **Step 1: Replace `backend/app/main.py`** with the full implementation:
+- [ ] **Step 1: Remove the `xfail` marker from `backend/tests/test_health.py`**
+
+The marker was added in Task 4 to allow the pre-commit hook to pass while the endpoint was absent. Now that we're implementing the endpoint, it must be removed:
+
+```python
+# Remove this line:
+@pytest.mark.xfail(reason="/health endpoint not yet implemented", strict=True)
+```
+
+The file should read:
+```python
+from httpx import AsyncClient
+
+
+async def test_health_returns_ok(ac: AsyncClient) -> None:
+    response = await ac.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+```
+
+- [ ] **Step 2: Replace `backend/app/main.py`** with the full implementation:
 
 ```python
 from contextlib import asynccontextmanager
@@ -304,7 +324,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     app.state.db = firestore.AsyncClient(project=settings.gcp_project_id)
     yield
-    app.state.db.close()
+    await app.state.db.close()
 
 
 def create_app() -> FastAPI:
@@ -333,7 +353,7 @@ def create_app() -> FastAPI:
 app = create_app()
 ```
 
-- [ ] **Step 2: Run `/health` test**
+- [ ] **Step 3: Run `/health` test**
 
 ```bash
 docker-compose run --rm backend pytest tests/test_health.py -v
@@ -341,7 +361,7 @@ docker-compose run --rm backend pytest tests/test_health.py -v
 
 Expected: `test_health_returns_ok PASSED`
 
-- [ ] **Step 3: Run the full test suite**
+- [ ] **Step 4: Run the full test suite**
 
 ```bash
 docker-compose run --rm backend pytest -v
@@ -349,7 +369,7 @@ docker-compose run --rm backend pytest -v
 
 Expected: `2 passed` (test_app_starts + test_health_returns_ok)
 
-- [ ] **Step 4: Run mypy**
+- [ ] **Step 5: Run mypy**
 
 ```bash
 docker-compose run --rm backend mypy app/
@@ -357,10 +377,10 @@ docker-compose run --rm backend mypy app/
 
 Expected: `Success: no issues found in N source files`
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add backend/app/main.py
+git add backend/app/main.py backend/tests/test_health.py
 git commit -m "feat: add /health endpoint and Firestore lifespan init to main.py"
 ```
 
