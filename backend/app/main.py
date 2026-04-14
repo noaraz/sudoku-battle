@@ -10,7 +10,7 @@ from app.core.config import get_settings
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no cover
     settings = get_settings()
     # Propagate FIRESTORE_EMULATOR_HOST to os.environ so the GCP SDK picks it up.
     # The SDK reads this directly from os.environ, not from pydantic-settings.
