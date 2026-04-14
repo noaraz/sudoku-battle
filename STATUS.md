@@ -24,6 +24,4 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
 - [x] `frontend/PLAN.md` generated
 
 ## Next
-- [ ] Phase 0: project init (deps, test frameworks, Firestore emulator)
-  - Backend: `pyproject.toml`, `app/main.py`, `conftest.py`, mypy config
-  - Frontend: Vite + React + TypeScript + Tailwind + vitest scaffold
+- [ ] Phase 1: Solo Play — playable Sudoku in the browser (no auth/network)
