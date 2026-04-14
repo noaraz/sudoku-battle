@@ -14,18 +14,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     # Propagate FIRESTORE_EMULATOR_HOST to os.environ so the GCP SDK picks it up.
     # The SDK reads this directly from os.environ, not from pydantic-settings.
-    # Save and restore the original value so this mutation does not leak into
+    # Save and restore around the lifespan so the mutation does not leak into
     # sibling test cases when the lifespan is run under asgi-lifespan in Phase 2.
-    _prev_emulator_host = os.environ.get("FIRESTORE_EMULATOR_HOST")
-    if settings.firestore_emulator_host:
-        os.environ["FIRESTORE_EMULATOR_HOST"] = settings.firestore_emulator_host
-    app.state.db = firestore.AsyncClient(project=settings.gcp_project_id)
-    yield
-    await app.state.db.close()
-    if _prev_emulator_host is None:
-        os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
-    else:
-        os.environ["FIRESTORE_EMULATOR_HOST"] = _prev_emulator_host
+    _prev = os.environ.get("FIRESTORE_EMULATOR_HOST")
+    try:
+        if settings.firestore_emulator_host:
+            os.environ["FIRESTORE_EMULATOR_HOST"] = settings.firestore_emulator_host
+        app.state.db = firestore.AsyncClient(project=settings.gcp_project_id)
+        yield
+        await app.state.db.close()
+    finally:
+        if _prev is None:
+            os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
+        else:
+            os.environ["FIRESTORE_EMULATOR_HOST"] = _prev
 
 
 def create_app() -> FastAPI:
