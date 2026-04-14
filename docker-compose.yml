@@ -7,7 +7,7 @@ services:
     volumes:
       - ./backend:/app
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - FIRESTORE_EMULATOR_HOST=firestore:8080
     depends_on:
@@ -22,7 +22,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "5173:5173"
+      - "5174:5173"
     command: npm run dev -- --host 0.0.0.0
 
   firestore:
@@ -33,7 +33,7 @@ services:
     command: >
       gcloud emulators firestore start
       --host-port=0.0.0.0:8080
-      --project=sudoku-battle
+      --project=sudoku-battle-local
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080' 2>/dev/null"]
       interval: 5s
