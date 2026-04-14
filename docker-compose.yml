@@ -33,7 +33,7 @@ services:
     command: >
       gcloud emulators firestore start
       --host-port=0.0.0.0:8080
-      --project=sudoku-battle
+      --project=sudoku-battle-local
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080' 2>/dev/null"]
       interval: 5s

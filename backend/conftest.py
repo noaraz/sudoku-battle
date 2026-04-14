@@ -38,7 +38,7 @@ async def db() -> AsyncGenerator[firestore.AsyncClient, None]:
             "Start with: docker-compose up firestore"
         )
     client: firestore.AsyncClient = firestore.AsyncClient(
-        project="sudoku-battle-test"
+        project="sudoku-battle-local"
     )
     yield client
     await client.close()

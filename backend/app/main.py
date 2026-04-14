@@ -18,12 +18,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # sibling test cases when the lifespan is run under asgi-lifespan in Phase 2.
     _prev = os.environ.get("FIRESTORE_EMULATOR_HOST")
     try:
-        if settings.firestore_emulator_host:
+        # Only propagate the emulator host in local mode. In production, the env
+        # var should never be set — but guard explicitly so a misconfigured deploy
+        # cannot accidentally route production Firestore traffic to a dead emulator.
+        if settings.app_env == "local" and settings.firestore_emulator_host:
             os.environ["FIRESTORE_EMULATOR_HOST"] = settings.firestore_emulator_host
         app.state.db = firestore.AsyncClient(project=settings.gcp_project_id)
         yield
-        await app.state.db.close()
     finally:
+        await app.state.db.close()
         if _prev is None:
             os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
         else:
