@@ -12,6 +12,12 @@ describe("Timer", () => {
     render(<Timer seconds={75} />);
     expect(screen.getByText("01:15")).toBeTruthy();
   });
+
+  it("renders with muted color class", () => {
+    const { container } = render(<Timer seconds={0} />);
+    const el = container.firstChild as HTMLElement;
+    expect(el.className).toContain("text-gray-400");
+  });
 });
 
 describe("NumPad", () => {
