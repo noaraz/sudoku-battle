@@ -120,4 +120,14 @@ describe("Board — related-cell highlighting", () => {
     expect(selected?.className).toMatch(/bg-blue-500/);
     expect(selected?.className).not.toMatch(/\bbg-blue-50\b/);
   });
+
+  it("does not highlight any cell when selectedCell is null", () => {
+    const { container } = render(
+      <Board board={makeEmptyBoard()} selectedCell={null} highlightNum={null} onSelectCell={vi.fn()} />
+    );
+    const cells = container.querySelectorAll("[data-testid^='cell-']");
+    cells.forEach((cell) => {
+      expect(cell.className).not.toMatch(/\bbg-blue-50\b/);
+    });
+  });
 });
