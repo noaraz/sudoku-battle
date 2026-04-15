@@ -63,6 +63,15 @@ describe("NumPad", () => {
     const buttons = screen.getAllByRole("button");
     buttons.forEach((btn) => expect(btn.className).not.toContain("bg-blue-500"));
   });
+
+  it("does not highlight a done+armed button (done takes priority)", () => {
+    const remaining: Record<number, number> = {};
+    for (let i = 1; i <= 9; i++) remaining[i] = i === 7 ? 0 : 3;
+    render(<NumPad numRemaining={remaining} onInput={vi.fn()} selectedNum={7} />);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[6]).toBeDisabled(); // digit 7 is done
+    expect(buttons[6].className).not.toContain("bg-blue-500");
+  });
 });
 
 describe("ActionBar", () => {
