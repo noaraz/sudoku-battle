@@ -39,6 +39,30 @@ describe("NumPad", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons[6]).toBeDisabled(); // index 6 = digit 7
   });
+
+  it("highlights the selectedNum button with blue bg", () => {
+    const remaining: Record<number, number> = {};
+    for (let i = 1; i <= 9; i++) remaining[i] = 3;
+    render(<NumPad numRemaining={remaining} onInput={vi.fn()} selectedNum={5} />);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[4].className).toContain("bg-blue-500"); // index 4 = digit 5
+  });
+
+  it("does not highlight non-selected buttons when selectedNum is set", () => {
+    const remaining: Record<number, number> = {};
+    for (let i = 1; i <= 9; i++) remaining[i] = 3;
+    render(<NumPad numRemaining={remaining} onInput={vi.fn()} selectedNum={5} />);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0].className).not.toContain("bg-blue-500"); // digit 1
+  });
+
+  it("no button is highlighted when selectedNum is null", () => {
+    const remaining: Record<number, number> = {};
+    for (let i = 1; i <= 9; i++) remaining[i] = 3;
+    render(<NumPad numRemaining={remaining} onInput={vi.fn()} selectedNum={null} />);
+    const buttons = screen.getAllByRole("button");
+    buttons.forEach((btn) => expect(btn.className).not.toContain("bg-blue-500"));
+  });
 });
 
 describe("ActionBar", () => {
