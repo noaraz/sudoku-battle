@@ -22,6 +22,8 @@ function isRelated(
   );
 }
 
+// Priority: selected > highlighted (same-value) > related (same row/col/box) > bare.
+// isHighlighted beats related intentionally — number-match highlight is more specific.
 function cellClass(
   cell: { value: number; isGiven: boolean; hasError: boolean },
   isSelected: boolean,
