@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { Timer } from "./Timer";
 import { NumPad } from "./NumPad";
 import { ActionBar } from "./ActionBar";
+import { Board } from "./Board";
+import type { Board as BoardType } from "../models";
 
 describe("Timer", () => {
   it("renders MM:SS format", () => {
@@ -66,5 +68,56 @@ describe("ActionBar", () => {
     );
     await userEvent.click(screen.getByLabelText("Lightning mode"));
     expect(onToggle).toHaveBeenCalled();
+  });
+});
+
+function makeEmptyBoard(): BoardType {
+  return Array.from({ length: 9 }, () =>
+    Array.from({ length: 9 }, () => ({ value: 0, isGiven: false, hasError: false }))
+  );
+}
+
+describe("Board — related-cell highlighting", () => {
+  it("applies related bg to cells in the same row as selectedCell", () => {
+    const { container } = render(
+      <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
+    );
+    const cell = container.querySelector("[data-testid='cell-2-0']");
+    expect(cell?.className).toContain("bg-blue-50");
+  });
+
+  it("applies related bg to cells in the same column as selectedCell", () => {
+    const { container } = render(
+      <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
+    );
+    const cell = container.querySelector("[data-testid='cell-0-4']");
+    expect(cell?.className).toContain("bg-blue-50");
+  });
+
+  it("applies related bg to cells in the same 3x3 box as selectedCell", () => {
+    const { container } = render(
+      <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
+    );
+    // selectedCell r=2, c=4 → box rows 0-2, cols 3-5 → cell r=0, c=3 is related
+    const cell = container.querySelector("[data-testid='cell-0-3']");
+    expect(cell?.className).toContain("bg-blue-50");
+  });
+
+  it("does not apply related bg to cells outside row/col/box", () => {
+    const { container } = render(
+      <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
+    );
+    // r=0, c=0: different row, column, and box from r=2, c=4
+    const cell = container.querySelector("[data-testid='cell-0-0']");
+    expect(cell?.className).not.toContain("bg-blue-50");
+  });
+
+  it("does not apply related bg to the selected cell itself", () => {
+    const { container } = render(
+      <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
+    );
+    const selected = container.querySelector("[data-testid='cell-2-4']");
+    expect(selected?.className).toMatch(/bg-blue-500/);
+    expect(selected?.className).not.toMatch(/\bbg-blue-50\b/);
   });
 });
