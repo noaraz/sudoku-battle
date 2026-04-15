@@ -27,6 +27,11 @@ export function GameScreen({ seed, difficulty, onFinish }: GameScreenProps) {
     ? game.board[game.selectedCell.r][game.selectedCell.c].value || null
     : null;
 
+  // In lightning mode, highlight the armed number on the pad; in default mode, highlight the selected cell's value
+  const selectedNum = game.lightningMode
+    ? game.lightningNum
+    : highlightNum;
+
   return (
     <div className="flex flex-col items-center gap-4 p-4 min-h-screen bg-white dark:bg-gray-900">
       <Timer seconds={game.timer} />
@@ -36,7 +41,7 @@ export function GameScreen({ seed, difficulty, onFinish }: GameScreenProps) {
         highlightNum={highlightNum}
         onSelectCell={game.selectCell}
       />
-      <NumPad numRemaining={game.numRemaining} onInput={game.inputNumber} />
+      <NumPad numRemaining={game.numRemaining} onInput={game.inputNumber} selectedNum={selectedNum} />
       <ActionBar
         lightningMode={game.lightningMode}
         onUndo={game.undo}
