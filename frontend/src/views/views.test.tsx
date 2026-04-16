@@ -122,7 +122,7 @@ describe("Board — related-cell highlighting", () => {
       <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
     );
     const cell = container.querySelector("[data-testid='cell-2-0']");
-    expect(cell?.className).toContain("bg-blue-50");
+    expect(cell?.className).toContain("bg-blue-100");
   });
 
   it("applies related bg to cells in the same column as selectedCell", () => {
@@ -130,7 +130,7 @@ describe("Board — related-cell highlighting", () => {
       <Board board={makeEmptyBoard()} selectedCell={{ r: 2, c: 4 }} highlightNum={null} onSelectCell={vi.fn()} />
     );
     const cell = container.querySelector("[data-testid='cell-0-4']");
-    expect(cell?.className).toContain("bg-blue-50");
+    expect(cell?.className).toContain("bg-blue-100");
   });
 
   it("applies related bg to cells in the same 3x3 box as selectedCell", () => {
@@ -139,7 +139,7 @@ describe("Board — related-cell highlighting", () => {
     );
     // selectedCell r=2, c=4 → box rows 0-2, cols 3-5 → cell r=0, c=3 is related
     const cell = container.querySelector("[data-testid='cell-0-3']");
-    expect(cell?.className).toContain("bg-blue-50");
+    expect(cell?.className).toContain("bg-blue-100");
   });
 
   it("does not apply related bg to cells outside row/col/box", () => {
@@ -148,7 +148,7 @@ describe("Board — related-cell highlighting", () => {
     );
     // r=0, c=0: different row, column, and box from r=2, c=4
     const cell = container.querySelector("[data-testid='cell-0-0']");
-    expect(cell?.className).not.toContain("bg-blue-50");
+    expect(cell?.className).not.toContain("bg-blue-100");
   });
 
   it("does not apply related bg to the selected cell itself", () => {
@@ -157,7 +157,7 @@ describe("Board — related-cell highlighting", () => {
     );
     const selected = container.querySelector("[data-testid='cell-2-4']");
     expect(selected?.className).toMatch(/bg-blue-500/);
-    expect(selected?.className).not.toMatch(/\bbg-blue-50\b/);
+    expect(selected?.className).not.toContain("bg-blue-100");
   });
 
   it("does not highlight any cell when selectedCell is null", () => {
@@ -166,7 +166,7 @@ describe("Board — related-cell highlighting", () => {
     );
     const cells = container.querySelectorAll("[data-testid^='cell-']");
     cells.forEach((cell) => {
-      expect(cell.className).not.toMatch(/\bbg-blue-50\b/);
+      expect(cell.className).not.toMatch(/\bbg-blue-100\b/);
     });
   });
 });

@@ -36,9 +36,9 @@ function cellClass(
   if (isHighlighted && cell.value !== 0)
     return `${base} bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100`;
   if (related) {
-    if (cell.hasError) return `${base} bg-blue-50 dark:bg-gray-700 text-red-500`;
-    if (cell.isGiven) return `${base} bg-blue-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100`;
-    return `${base} bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400`;
+    if (cell.hasError) return `${base} bg-blue-100 dark:bg-gray-700 text-red-500`;
+    if (cell.isGiven) return `${base} bg-blue-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100`;
+    return `${base} bg-blue-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400`;
   }
   if (cell.hasError) return `${base} text-red-500`;
   if (cell.isGiven) return `${base} text-gray-900 dark:text-gray-100`;
