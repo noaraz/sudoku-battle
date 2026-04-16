@@ -46,11 +46,20 @@ function cellClass(
 }
 
 function boxBorderClass(r: number, c: number): string {
-  const bt = r % 3 === 0 ? "border-t-2" : "border-t";
-  const bb = r === 8 ? "border-b-2" : "";
-  const bl = c % 3 === 0 ? "border-l-2" : "border-l";
-  const br = c === 8 ? "border-r-2" : "";
-  return `${bt} ${bb} ${bl} ${br} border-gray-800 dark:border-gray-200`;
+  // Box boundaries: thick + clearly visible. Inner lines: thin + barely visible.
+  const bt = r % 3 === 0
+    ? "border-t-2 border-t-gray-500 dark:border-t-gray-400"
+    : "border-t border-t-gray-300 dark:border-t-gray-700";
+  const bb = r === 8
+    ? "border-b-2 border-b-gray-500 dark:border-b-gray-400"
+    : "";
+  const bl = c % 3 === 0
+    ? "border-l-2 border-l-gray-500 dark:border-l-gray-400"
+    : "border-l border-l-gray-300 dark:border-l-gray-700";
+  const br = c === 8
+    ? "border-r-2 border-r-gray-500 dark:border-r-gray-400"
+    : "";
+  return `${bt} ${bb} ${bl} ${br}`;
 }
 
 export function Board({ board, selectedCell, highlightNum, onSelectCell }: BoardProps) {
