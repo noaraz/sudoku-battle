@@ -23,22 +23,13 @@ export function GameScreen({ seed, difficulty, onFinish }: GameScreenProps) {
     }
   }, [game.isFinished, game.timer, onFinish]);
 
-  // In lightning mode: highlight cells matching the armed number.
-  // Otherwise: highlight cells matching the selected cell's value.
-  const highlightNum =
-    game.lightningMode && game.lightningNum !== null
-      ? game.lightningNum
-      : game.selectedCell
-        ? game.board[game.selectedCell.r][game.selectedCell.c].value || null
-        : null;
-
   return (
     <div className="flex flex-col items-center gap-4 p-4 min-h-screen bg-white dark:bg-zinc-900">
       <Timer seconds={game.timer} />
       <Board
         board={game.board}
-        selectedCell={game.lightningMode && game.lightningNum !== null ? null : game.selectedCell}
-        highlightNum={highlightNum}
+        selectedCell={game.selectedCell}
+        highlightNum={game.highlightNum}
         onSelectCell={game.selectCell}
       />
       <NumPad
