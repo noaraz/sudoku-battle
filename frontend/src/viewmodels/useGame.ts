@@ -137,6 +137,7 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
     (n: number) => {
       if (lightningMode) {
         setLightningNum(n);
+        setSelectedCell(null);
         return;
       }
       if (!selectedCell) return;

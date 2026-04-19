@@ -172,6 +172,25 @@ describe("useGame — lightningMode", () => {
     expect(result.current.selectedCell).toEqual({ r, c });
   });
 
+  it("arming a number via numpad in lightning mode clears selectedCell so stale related cells disappear", () => {
+    const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
+    // Select a cell first, then enter lightning mode
+    act(() => result.current.selectCell(0, 0));
+    act(() => result.current.toggleLightning());
+    // selectedCell was cleared on toggle — now arm a number via numpad
+    // then click a board cell so selectedCell is set
+    const flat = result.current.board.flat();
+    const emptyIdx = flat.findIndex((c) => !c.isGiven);
+    const r = Math.floor(emptyIdx / 9);
+    const c = emptyIdx % 9;
+    act(() => result.current.inputNumber(1));
+    act(() => result.current.selectCell(r, c)); // selectedCell = {r,c}
+    expect(result.current.selectedCell).toEqual({ r, c });
+    // Now change number via numpad — selectedCell should clear
+    act(() => result.current.inputNumber(2));
+    expect(result.current.selectedCell).toBeNull();
+  });
+
   it("clicking a filled cell in lightning mode switches lightningNum to that cell's value", () => {
     const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
     // Find a given (filled) cell
