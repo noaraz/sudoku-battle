@@ -288,3 +288,42 @@ describe("LeaderboardScreen", () => {
     expect(onBack).toHaveBeenCalled();
   });
 });
+
+// ─── Lobby ──────────────────────────────────────────────────────────────────
+import { Lobby } from "./Lobby";
+
+describe("Lobby", () => {
+  it("renders Solo, Battle, and Scores options", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    expect(screen.getByText(/solo/i)).toBeInTheDocument();
+    expect(screen.getByText(/battle/i)).toBeInTheDocument();
+    expect(screen.getByText(/scores/i)).toBeInTheDocument();
+  });
+
+  it("shows difficulty picker when Solo is clicked", async () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    await userEvent.click(screen.getByText(/solo/i));
+    expect(screen.getByText(/easy/i)).toBeInTheDocument();
+    expect(screen.getByText(/medium/i)).toBeInTheDocument();
+  });
+
+  it("calls onSolo with difficulty when difficulty is selected", async () => {
+    const onSolo = vi.fn();
+    render(<Lobby onSolo={onSolo} onScores={vi.fn()} />);
+    await userEvent.click(screen.getByText(/solo/i));
+    await userEvent.click(screen.getByRole("button", { name: /^easy$/i }));
+    expect(onSolo).toHaveBeenCalledWith("easy");
+  });
+
+  it("calls onScores when Scores is clicked", async () => {
+    const onScores = vi.fn();
+    render(<Lobby onSolo={vi.fn()} onScores={onScores} />);
+    await userEvent.click(screen.getByText(/scores/i));
+    expect(onScores).toHaveBeenCalled();
+  });
+
+  it("Battle button is disabled", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+  });
+});
