@@ -1,5 +1,12 @@
 # Plan
 
+## Phase 2 — Auth + Leaderboard
+
+- **Spec:** [`docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md`](docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md)
+- **Plan:** [`docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md`](docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md)
+
+---
+
 ## Release
 
 When ready to ship to production, create `.claude/commands/release.md` (modelled on the garmin-coach release command at `/Users/noa.raz/workspace/my-garmin-coach/.claude/commands/release.md`).

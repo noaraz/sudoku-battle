@@ -26,4 +26,6 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
 - [x] UI Polish — lightning mode feedback, row/col/box highlighting, dark mode colors, cell font sizing, border visibility fix, lightning-mode dual-highlight bug fix
 
 ## Next
-- [ ] Phase 2: Auth + Leaderboard — register, login, leaderboard endpoint
+- [ ] Phase 2: Auth + Leaderboard
+  - Spec: [`docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md`](docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md)
+  - Plan: [`docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md`](docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md)
