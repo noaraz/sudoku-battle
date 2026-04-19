@@ -172,6 +172,26 @@ describe("useGame — lightningMode", () => {
     expect(result.current.selectedCell).toEqual({ r, c });
   });
 
+  it("clicking a filled cell in lightning mode switches lightningNum to that cell's value", () => {
+    const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
+    // Find a given (filled) cell
+    const flat = result.current.board.flat();
+    const givenIdx = flat.findIndex((c) => c.isGiven);
+    const gr = Math.floor(givenIdx / 9);
+    const gc = givenIdx % 9;
+    const givenValue = flat[givenIdx].value;
+
+    act(() => result.current.toggleLightning());
+    // Arm with something other than the given cell's value
+    const armedNum = givenValue === 9 ? 1 : givenValue + 1;
+    act(() => result.current.inputNumber(armedNum));
+    expect(result.current.lightningNum).toBe(armedNum);
+
+    // Click the filled cell — should switch to its value
+    act(() => result.current.selectCell(gr, gc));
+    expect(result.current.lightningNum).toBe(givenValue);
+  });
+
   it("in lightning mode, inputNumber arms lightningNum; selectCell places it", () => {
     const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
     const flat = result.current.board.flat();

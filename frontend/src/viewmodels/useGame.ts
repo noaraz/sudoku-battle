@@ -122,12 +122,15 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
 
   const selectCell = useCallback(
     (r: number, c: number) => {
-      if (lightningMode && lightningNum !== null) {
+      const cellValue = board[r][c].value;
+      if (lightningMode && cellValue !== 0) {
+        setLightningNum(cellValue);
+      } else if (lightningMode && lightningNum !== null) {
         placeValue(r, c, lightningNum);
       }
       setSelectedCell({ r, c });
     },
-    [lightningMode, lightningNum, placeValue]
+    [lightningMode, lightningNum, board, placeValue]
   );
 
   const inputNumber = useCallback(
