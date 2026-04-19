@@ -246,3 +246,45 @@ describe("LoginScreen", () => {
     );
   });
 });
+
+// ─── LeaderboardScreen ──────────────────────────────────────────────────────
+import { LeaderboardScreen } from "./LeaderboardScreen";
+
+describe("LeaderboardScreen", () => {
+  const entries = [
+    { name: "Alice", wins: 5, played: 8 },
+    { name: "Bob", wins: 2, played: 4 },
+  ];
+
+  it("renders a ranked row for each entry", () => {
+    render(
+      <LeaderboardScreen entries={entries} loading={false} onBack={vi.fn()} />
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText(/5 wins/)).toBeInTheDocument();
+  });
+
+  it("shows loading state", () => {
+    render(
+      <LeaderboardScreen entries={[]} loading={true} onBack={vi.fn()} />
+    );
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it("shows empty state when no entries", () => {
+    render(
+      <LeaderboardScreen entries={[]} loading={false} onBack={vi.fn()} />
+    );
+    expect(screen.getByText(/no scores yet/i)).toBeInTheDocument();
+  });
+
+  it("calls onBack when back button is clicked", async () => {
+    const onBack = vi.fn();
+    render(
+      <LeaderboardScreen entries={entries} loading={false} onBack={onBack} />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /back|←/i }));
+    expect(onBack).toHaveBeenCalled();
+  });
+});
