@@ -21,7 +21,7 @@ export function NumPad({ numRemaining, onInput, selectedNum = null }: NumPadProp
                 ? "bg-gray-200 dark:bg-gray-600 opacity-30 cursor-not-allowed"
                 : isArmed
                   ? "bg-blue-500 text-white hover:bg-blue-600 active:scale-95"
-                  : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 hover:bg-blue-100 dark:hover:bg-blue-800 active:scale-95"
+                  : "bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800 active:scale-95"
               }`}
           >
             <span>{n}</span>

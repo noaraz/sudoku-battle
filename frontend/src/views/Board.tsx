@@ -31,7 +31,7 @@ function cellClass(
   related: boolean
 ): string {
   const base =
-    "flex items-center justify-center text-lg font-semibold select-none cursor-pointer";
+    "flex items-center justify-center text-2xl font-normal select-none cursor-pointer";
   if (isSelected) return `${base} bg-blue-500 text-white`;
   if (isHighlighted && cell.value !== 0)
     return `${base} bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100`;
@@ -49,13 +49,13 @@ function boxBorderClass(r: number, c: number): string {
   // Box boundaries: thick + clearly visible. Inner lines: thin + barely visible.
   const bt = r % 3 === 0
     ? "border-t-2 border-t-gray-500 dark:border-t-gray-400"
-    : "border-t border-t-gray-300 dark:border-t-gray-700";
+    : "border-t border-t-gray-300 dark:border-t-gray-500";
   const bb = r === 8
     ? "border-b-2 border-b-gray-500 dark:border-b-gray-400"
     : "";
   const bl = c % 3 === 0
     ? "border-l-2 border-l-gray-500 dark:border-l-gray-400"
-    : "border-l border-l-gray-300 dark:border-l-gray-700";
+    : "border-l border-l-gray-300 dark:border-l-gray-500";
   const br = c === 8
     ? "border-r-2 border-r-gray-500 dark:border-r-gray-400"
     : "";

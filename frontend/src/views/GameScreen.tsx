@@ -33,11 +33,11 @@ export function GameScreen({ seed, difficulty, onFinish }: GameScreenProps) {
         : null;
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4 min-h-screen bg-white dark:bg-gray-900">
+    <div className="flex flex-col items-center gap-4 p-4 min-h-screen bg-white dark:bg-zinc-900">
       <Timer seconds={game.timer} />
       <Board
         board={game.board}
-        selectedCell={game.selectedCell}
+        selectedCell={game.lightningMode && game.lightningNum !== null ? null : game.selectedCell}
         highlightNum={highlightNum}
         onSelectCell={game.selectCell}
       />
