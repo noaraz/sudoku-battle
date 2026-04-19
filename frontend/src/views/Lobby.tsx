@@ -8,7 +8,7 @@ const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "expert"];
 
 export function Lobby({ onStart }: LobbyProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col items-center justify-center gap-8 min-h-screen bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100">
       <h1 className="text-3xl font-bold">Sudoku Battle</h1>
       <p className="text-gray-500 dark:text-gray-400">Pick a difficulty to start</p>
       <div className="flex flex-col gap-3 w-full max-w-[240px]">

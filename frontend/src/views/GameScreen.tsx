@@ -23,20 +23,20 @@ export function GameScreen({ seed, difficulty, onFinish }: GameScreenProps) {
     }
   }, [game.isFinished, game.timer, onFinish]);
 
-  const highlightNum = game.selectedCell
-    ? game.board[game.selectedCell.r][game.selectedCell.c].value || null
-    : null;
-
   return (
-    <div className="flex flex-col items-center gap-4 p-4 min-h-screen bg-white dark:bg-gray-900">
+    <div className="flex flex-col items-center gap-4 p-4 min-h-screen bg-white dark:bg-zinc-900">
       <Timer seconds={game.timer} />
       <Board
         board={game.board}
         selectedCell={game.selectedCell}
-        highlightNum={highlightNum}
+        highlightNum={game.highlightNum}
         onSelectCell={game.selectCell}
       />
-      <NumPad numRemaining={game.numRemaining} onInput={game.inputNumber} />
+      <NumPad
+        numRemaining={game.numRemaining}
+        onInput={game.inputNumber}
+        selectedNum={game.lightningMode ? game.lightningNum : null}
+      />
       <ActionBar
         lightningMode={game.lightningMode}
         onUndo={game.undo}

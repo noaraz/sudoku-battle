@@ -134,8 +134,11 @@ See [Phase 0 + Phase 1: Solo Play](../docs/superpowers/plans/2026-04-10-phase-0-
 ## Phase 4: Polish + Integration
 
 - [ ] Mobile-first layout validation (max-width 420px, test on 375px viewport)
-- [ ] Full dark/light theme: exact colors, smooth transitions
-- [ ] Exact board styling: thick 3×3 box borders, precise cell highlight colors per spec
+- [x] Full dark/light theme: zinc-900 bg, vibrant blue numpad digits, no navy tint
+- [x] Exact board styling: thick 3×3 box borders, inner border visibility against highlight bg
+- [x] Lightning mode: armed number highlighted on numpad + board; no dual-number highlight bug
+- [x] Row/col/box cell highlighting when a cell is selected
+- [x] Board font: larger size (text-2xl), normal weight
 - [ ] Error handling: network timeouts, WS disconnect + reconnect UX, invalid server responses
 - [ ] `tsc --noEmit` passes with zero errors
 

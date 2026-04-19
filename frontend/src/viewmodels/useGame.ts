@@ -13,6 +13,8 @@ interface GameState {
   selectedCell: SelectedCell | null;
   lightningMode: boolean;
   lightningNum: number | null;
+  /** Number whose matching cells should be highlighted on the board. */
+  highlightNum: number | null;
   timer: number;
   isFinished: boolean;
   undoHistory: RawBoard[];
@@ -79,6 +81,15 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
   useEffect(() => {
     if (isComplete) setIsFinished(true);
   }, [isComplete]);
+
+  // Which number to highlight on the board:
+  // - lightning mode armed → highlight all cells matching the armed number
+  // - cell selected → highlight all cells matching that cell's value
+  const highlightNum = useMemo(() => {
+    if (lightningMode && lightningNum !== null) return lightningNum;
+    if (selectedCell) return board[selectedCell.r][selectedCell.c].value || null;
+    return null;
+  }, [lightningMode, lightningNum, selectedCell, board]);
 
   const numRemaining = useMemo(() => {
     const counts: Record<number, number> = {};
@@ -160,9 +171,12 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
   return {
     board,
     solution,
-    selectedCell,
+    // Suppress selected-cell highlight when lightning is armed — only the armed
+    // number's cells should glow; showing a stale selected cell creates confusion.
+    selectedCell: lightningMode && lightningNum !== null ? null : selectedCell,
     lightningMode,
     lightningNum,
+    highlightNum,
     timer,
     isFinished,
     undoHistory,
