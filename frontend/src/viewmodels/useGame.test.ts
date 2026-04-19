@@ -158,6 +158,20 @@ describe("useGame — lightningMode", () => {
     expect(result.current.selectedCell).toBeNull();
   });
 
+  it("clicking a cell in armed lightning mode updates selectedCell so related cells are shown", () => {
+    const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
+    const flat = result.current.board.flat();
+    const idx = flat.findIndex((c) => !c.isGiven);
+    const r = Math.floor(idx / 9);
+    const c = idx % 9;
+
+    act(() => result.current.toggleLightning());
+    act(() => result.current.inputNumber(1));
+    act(() => result.current.selectCell(r, c));
+    // After placing, selectedCell should be set so related cells can be highlighted
+    expect(result.current.selectedCell).toEqual({ r, c });
+  });
+
   it("in lightning mode, inputNumber arms lightningNum; selectCell places it", () => {
     const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
     const flat = result.current.board.flat();

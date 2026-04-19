@@ -124,9 +124,8 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
     (r: number, c: number) => {
       if (lightningMode && lightningNum !== null) {
         placeValue(r, c, lightningNum);
-      } else {
-        setSelectedCell({ r, c });
       }
+      setSelectedCell({ r, c });
     },
     [lightningMode, lightningNum, placeValue]
   );
@@ -172,9 +171,7 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
   return {
     board,
     solution,
-    // Suppress selected-cell highlight when lightning is armed — only the armed
-    // number's cells should glow; showing a stale selected cell creates confusion.
-    selectedCell: lightningMode && lightningNum !== null ? null : selectedCell,
+    selectedCell,
     lightningMode,
     lightningNum,
     highlightNum,
