@@ -96,14 +96,14 @@ See [Phase 0 + Phase 1: Solo Play](../docs/superpowers/plans/2026-04-10-phase-0-
 > **Note:** Auth is name-only (no PIN). Login = tap your name from a list; add new player = enter a name.
 
 ### Tasks (see plan for full TDD steps)
-- [ ] `src/services/api.ts` — `createPlayer`, `getPlayers`, `getLeaderboard`
-- [ ] `src/models/index.ts` — add `Player` interface
-- [ ] `src/viewmodels/useAuth.ts` — selectedPlayer, knownPlayers, selectPlayer, addPlayer
-- [ ] `src/viewmodels/useLeaderboard.ts` — entries, loading, load()
-- [ ] `src/views/LoginScreen.tsx` — player list (initials + name + wins) + "Add player" row
-- [ ] `src/views/LeaderboardScreen.tsx` — ranked list with back button
-- [ ] `src/views/Lobby.tsx` — main menu: Solo / Battle (disabled) / Scores
-- [ ] `src/App.tsx` — state machine: login | lobby | game | results | leaderboard
+- [x] `src/services/api.ts` — `createPlayer`, `getPlayers`, `getLeaderboard`
+- [x] `src/models/index.ts` — add `Player` interface
+- [x] `src/viewmodels/useAuth.ts` — selectedPlayer, knownPlayers, selectPlayer, addPlayer
+- [x] `src/viewmodels/useLeaderboard.ts` — entries, loading, load()
+- [x] `src/views/LoginScreen.tsx` — player list (initials + name + wins) + "Add player" row
+- [x] `src/views/LeaderboardScreen.tsx` — ranked list with back button
+- [x] `src/views/Lobby.tsx` — main menu: Solo / Battle (disabled) / Scores
+- [x] `src/App.tsx` — state machine: login | lobby | game | results | leaderboard
 
 ---
 
@@ -137,6 +137,7 @@ See [Phase 0 + Phase 1: Solo Play](../docs/superpowers/plans/2026-04-10-phase-0-
 - [x] Full dark/light theme: zinc-900 bg, vibrant blue numpad digits, no navy tint
 - [x] Exact board styling: thick 3×3 box borders, inner border visibility against highlight bg
 - [x] Lightning mode: armed number highlighted on numpad + board; no dual-number highlight bug
+- [x] Lightning mode: related cells shown after placing; tap filled cell to switch digit; numpad change clears stale related cells
 - [x] Row/col/box cell highlighting when a cell is selected
 - [x] Board font: larger size (text-2xl), normal weight
 - [ ] Error handling: network timeouts, WS disconnect + reconnect UX, invalid server responses

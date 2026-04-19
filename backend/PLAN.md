@@ -31,13 +31,13 @@ See [First Logic Phases Design](../docs/superpowers/specs/2026-04-10-first-logic
 > **Note:** Auth is name-only (no PIN). Players are identified by name; uniqueness enforced by Firestore doc ID.
 
 ### Tasks (see plan for full TDD steps)
-- [ ] `app/models/player.py` — `Player` dataclass: name, wins, played, created_at
-- [ ] `app/schemas/player.py` — `PlayerCreate`, `PlayerOut`
-- [ ] `app/repositories/player_repo.py` — `create(name)`, `get_all()`
-- [ ] `app/api/v1/players.py` — route handlers
-- [ ] `backend/conftest.py` — add `ac_with_db` fixture
-- [ ] `backend/app/main.py` — include players router at `/api/v1`
-- [ ] Tests: create player, duplicate → 409, list players, leaderboard sorted by wins
+- [x] `app/models/player.py` — `Player` dataclass: name, wins, played, created_at
+- [x] `app/schemas/player.py` — `PlayerCreate`, `PlayerOut`
+- [x] `app/repositories/player_repo.py` — `create(name)`, `get_all()`
+- [x] `app/api/v1/players.py` — route handlers
+- [x] `backend/conftest.py` — add `ac_with_db` fixture
+- [x] `backend/app/main.py` — include players router at `/api/v1`
+- [x] Tests: create player, duplicate → 409, list players, leaderboard sorted by wins
 
 ---
 
