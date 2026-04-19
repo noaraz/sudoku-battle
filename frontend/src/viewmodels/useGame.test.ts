@@ -148,6 +148,16 @@ describe("useGame — lightningMode", () => {
     expect(result.current.lightningMode).toBe(false);
   });
 
+  it("toggleLightning clears selectedCell so old row/col/box highlight disappears immediately", () => {
+    const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
+    // Select any cell first
+    act(() => result.current.selectCell(0, 0));
+    expect(result.current.selectedCell).not.toBeNull();
+    // Toggling lightning should clear the selection immediately
+    act(() => result.current.toggleLightning());
+    expect(result.current.selectedCell).toBeNull();
+  });
+
   it("in lightning mode, inputNumber arms lightningNum; selectCell places it", () => {
     const { result } = renderHook(() => useGame(SEED, DIFFICULTY));
     const flat = result.current.board.flat();

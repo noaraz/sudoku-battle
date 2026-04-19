@@ -166,6 +166,7 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
   const toggleLightning = useCallback(() => {
     setLightningMode((m) => !m);
     setLightningNum(null);
+    setSelectedCell(null);
   }, []);
 
   return {
