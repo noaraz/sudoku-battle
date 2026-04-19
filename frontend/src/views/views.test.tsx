@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Timer } from "./Timer";
 import { NumPad } from "./NumPad";
@@ -168,5 +168,81 @@ describe("Board — related-cell highlighting", () => {
     cells.forEach((cell) => {
       expect(cell.className).not.toMatch(/\bbg-blue-100\b/);
     });
+  });
+});
+
+// ─── LoginScreen ────────────────────────────────────────────────────────────
+import { LoginScreen } from "./LoginScreen";
+
+describe("LoginScreen", () => {
+  const players = [
+    { name: "Alice", wins: 3, played: 5 },
+    { name: "Bob", wins: 1, played: 2 },
+  ];
+
+  it("renders a button for each known player", () => {
+    render(
+      <LoginScreen
+        knownPlayers={players}
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+      />
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("shows empty-state message when no players", () => {
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={vi.fn()} onAdd={vi.fn()} />
+    );
+    expect(screen.getByText(/no players yet/i)).toBeInTheDocument();
+  });
+
+  it("calls onSelect with player name when player row is clicked", async () => {
+    const onSelect = vi.fn();
+    render(
+      <LoginScreen
+        knownPlayers={players}
+        onSelect={onSelect}
+        onAdd={vi.fn()}
+      />
+    );
+    await userEvent.click(screen.getByText("Alice"));
+    expect(onSelect).toHaveBeenCalledWith("Alice");
+  });
+
+  it("shows add-player input when 'Add player' is clicked", async () => {
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={vi.fn()} onAdd={vi.fn()} />
+    );
+    await userEvent.click(screen.getByText(/add player/i));
+    expect(screen.getByPlaceholderText(/your name/i)).toBeInTheDocument();
+  });
+
+  it("calls onAdd then onSelect when new player is submitted", async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const onSelect = vi.fn();
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={onSelect} onAdd={onAdd} />
+    );
+    await userEvent.click(screen.getByText(/add player/i));
+    await userEvent.type(screen.getByPlaceholderText(/your name/i), "Carol");
+    await userEvent.click(screen.getByRole("button", { name: /^add$/i }));
+    expect(onAdd).toHaveBeenCalledWith("Carol");
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith("Carol"));
+  });
+
+  it("shows error message when onAdd throws 'name taken'", async () => {
+    const onAdd = vi.fn().mockRejectedValue(new Error("name taken"));
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={vi.fn()} onAdd={onAdd} />
+    );
+    await userEvent.click(screen.getByText(/add player/i));
+    await userEvent.type(screen.getByPlaceholderText(/your name/i), "Alice");
+    await userEvent.click(screen.getByRole("button", { name: /^add$/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/name taken/i)).toBeInTheDocument()
+    );
   });
 });
