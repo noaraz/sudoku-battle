@@ -88,22 +88,22 @@ See [Phase 0 + Phase 1: Solo Play](../docs/superpowers/plans/2026-04-10-phase-0-
 
 ## Phase 2: Auth + Leaderboard
 
-**Milestone:** Register, log in, see a leaderboard.
+- **Spec:** [`../docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md`](../docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md)
+- **Plan:** [`../docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md`](../docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md)
 
-### services/api.ts
+**Milestone:** Pick a player name, play solo, see leaderboard.
 
-- [ ] `src/services/api.ts` — typed fetch wrapper for REST endpoints (register, login, leaderboard)
+> **Note:** Auth is name-only (no PIN). Login = tap your name from a list; add new player = enter a name.
 
-### Hooks
-
-- [ ] `useAuth()` — state: player, isLoggedIn, error, knownPlayers (localStorage); actions: register, login, logout
-- [ ] `useLeaderboard()` — state: entries, loading; actions: load()
-
-### Views
-
-- [ ] `LoginScreen.tsx` — register vs. login toggle; known players list for quick re-login
-- [ ] `LeaderboardScreen.tsx` — rank table (rank, name, wins, games played)
-- [ ] Lobby updated — requires login, shows leaderboard link + difficulty picker
+### Tasks (see plan for full TDD steps)
+- [ ] `src/services/api.ts` — `createPlayer`, `getPlayers`, `getLeaderboard`
+- [ ] `src/models/index.ts` — add `Player` interface
+- [ ] `src/viewmodels/useAuth.ts` — selectedPlayer, knownPlayers, selectPlayer, addPlayer
+- [ ] `src/viewmodels/useLeaderboard.ts` — entries, loading, load()
+- [ ] `src/views/LoginScreen.tsx` — player list (initials + name + wins) + "Add player" row
+- [ ] `src/views/LeaderboardScreen.tsx` — ranked list with back button
+- [ ] `src/views/Lobby.tsx` — main menu: Solo / Battle (disabled) / Scores
+- [ ] `src/App.tsx` — state machine: login | lobby | game | results | leaderboard
 
 ---
 
