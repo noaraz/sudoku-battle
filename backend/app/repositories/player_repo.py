@@ -29,6 +29,8 @@ async def get_all(db: AsyncClient) -> list[Player]:
     players: list[Player] = []
     async for doc in db.collection(COLLECTION).stream():
         data = doc.to_dict()
+        if data is None:
+            continue
         players.append(
             Player(
                 name=doc.id,
