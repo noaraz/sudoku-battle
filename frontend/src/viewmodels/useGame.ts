@@ -122,19 +122,22 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
 
   const selectCell = useCallback(
     (r: number, c: number) => {
-      if (lightningMode && lightningNum !== null) {
+      const cellValue = board[r][c].value;
+      if (lightningMode && cellValue !== 0) {
+        setLightningNum(cellValue);
+      } else if (lightningMode && lightningNum !== null) {
         placeValue(r, c, lightningNum);
-      } else {
-        setSelectedCell({ r, c });
       }
+      setSelectedCell({ r, c });
     },
-    [lightningMode, lightningNum, placeValue]
+    [lightningMode, lightningNum, board, placeValue]
   );
 
   const inputNumber = useCallback(
     (n: number) => {
       if (lightningMode) {
         setLightningNum(n);
+        setSelectedCell(null);
         return;
       }
       if (!selectedCell) return;
@@ -166,14 +169,13 @@ export function useGame(seed: number, difficulty: Difficulty): GameState {
   const toggleLightning = useCallback(() => {
     setLightningMode((m) => !m);
     setLightningNum(null);
+    setSelectedCell(null);
   }, []);
 
   return {
     board,
     solution,
-    // Suppress selected-cell highlight when lightning is armed — only the armed
-    // number's cells should glow; showing a stale selected cell creates confusion.
-    selectedCell: lightningMode && lightningNum !== null ? null : selectedCell,
+    selectedCell,
     lightningMode,
     lightningNum,
     highlightNum,

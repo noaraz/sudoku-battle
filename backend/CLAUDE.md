@@ -3,24 +3,28 @@
 FastAPI backend: REST API + WebSocket + serves frontend static build.
 
 ## Responsibilities
-- Player auth (register/login with name + bcrypt PIN)
-- Room lifecycle via WebSocket (create, join, countdown, results)
+- Player identity (name-only, no PIN — Phase 2)
+- Room lifecycle via WebSocket (create, join, countdown, results — Phase 3)
 - Leaderboard (Firestore reads/writes)
 - Serve built React frontend as static files
 
 ## Firestore Collections
 ```
-players/{name}        → { pin_hash, wins, played, created_at }
+players/{name}        → { wins, played, created_at }
 rooms/{room_id}       → { host, guest, difficulty, seed, status, results[], created_at }
 ```
 Rooms are ephemeral — deleted after game ends.
 
-## API
+## API (Phase 2 — implemented)
 ```
-POST /api/auth/register   → { name, pin }
-POST /api/auth/login      → { name, pin }
-GET  /api/leaderboard     → [{ name, wins, played }]
-WS   /ws/room/{room_id}?name=X&pin=Y
+POST /api/v1/players        → { name }         create player (409 if taken)
+GET  /api/v1/players        →                  list all players
+GET  /api/v1/leaderboard    →                  players sorted by wins desc
+```
+
+## API (Phase 3 — planned)
+```
+WS   /ws/room/{room_id}?name=X
 ```
 
 ## WebSocket Protocol
@@ -40,16 +44,15 @@ WAITING → READY → COUNTDOWN → PLAYING → FINISHED → (deleted)
 ## App Structure
 ```
 app/
-├── api/v1/endpoints/   # auth.py, rooms.py, leaderboard.py
-├── api/dependencies.py # get_firestore(), verify_player()
+├── api/v1/
+│   ├── players.py      # POST /players, GET /players, GET /leaderboard
+│   └── (rooms.py)      # Phase 3: WS room endpoints
 ├── core/config.py      # pydantic_settings.BaseSettings + lru_cache
-├── core/security.py    # bcrypt helpers
-├── models/             # TypedDict / dataclass Firestore shapes
-├── schemas/            # Pydantic request/response models
-├── services/           # auth_service.py, room_service.py
-├── repositories/       # player_repo.py, room_repo.py (Firestore access)
-├── websocket/room_handler.py
-└── main.py             # lifespan(app) inits app.state.db = firestore.AsyncClient()
+├── models/             # dataclass Firestore shapes (player.py)
+├── schemas/            # Pydantic request/response models (player.py)
+├── repositories/       # player_repo.py, (room_repo.py Phase 3)
+├── (websocket/)        # Phase 3: room_handler.py
+└── main.py             # create_app() factory; lifespan inits app.state.db
 ```
 
 ## Testing

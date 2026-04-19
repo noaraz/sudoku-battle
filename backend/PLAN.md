@@ -23,43 +23,21 @@ See [First Logic Phases Design](../docs/superpowers/specs/2026-04-10-first-logic
 
 ## Phase 2: Auth + Leaderboard
 
-**Milestone:** `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/leaderboard` all pass tests.
+- **Spec:** [`../docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md`](../docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md)
+- **Plan:** [`../docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md`](../docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md)
 
-### Structure
-```
-app/
-├── core/
-│   ├── config.py
-│   └── security.py          # bcrypt hash + verify
-├── models/
-│   └── player.py            # TypedDict / dataclass for Firestore shape
-├── schemas/
-│   ├── auth.py              # RegisterRequest, LoginRequest, PlayerResponse
-│   └── leaderboard.py       # LeaderboardEntry
-├── repositories/
-│   └── player_repo.py       # players/{name} CRUD
-├── services/
-│   └── auth_service.py      # register, login
-├── api/
-│   └── v1/
-│       ├── router.py
-│       └── endpoints/
-│           ├── auth.py
-│           └── leaderboard.py
-└── api/
-    └── dependencies.py      # get_db(), verify_player()
-```
+**Milestone:** `POST /api/v1/players`, `GET /api/v1/players`, `GET /api/v1/leaderboard` all pass tests.
 
-### Tasks
-- [ ] `app/core/security.py` — `hash_pin(pin)`, `verify_pin(pin, hashed)`
-- [ ] `app/models/player.py`
-- [ ] `app/repositories/player_repo.py` — `get`, `create`, `update_stats`
-- [ ] `app/services/auth_service.py` — `register`, `login` (raises on duplicate name / bad PIN)
-- [ ] `app/schemas/auth.py`, `app/schemas/leaderboard.py`
-- [ ] `app/api/v1/endpoints/auth.py` — `POST /api/auth/register`, `POST /api/auth/login`
-- [ ] `app/api/v1/endpoints/leaderboard.py` — `GET /api/leaderboard`
-- [ ] `app/api/dependencies.py` — `get_db()`, `verify_player()`
-- [ ] Tests (Firestore emulator): register, login, duplicate name → 409, wrong PIN → 401, leaderboard sorted by wins
+> **Note:** Auth is name-only (no PIN). Players are identified by name; uniqueness enforced by Firestore doc ID.
+
+### Tasks (see plan for full TDD steps)
+- [x] `app/models/player.py` — `Player` dataclass: name, wins, played, created_at
+- [x] `app/schemas/player.py` — `PlayerCreate`, `PlayerOut`
+- [x] `app/repositories/player_repo.py` — `create(name)`, `get_all()`
+- [x] `app/api/v1/players.py` — route handlers
+- [x] `backend/conftest.py` — add `ac_with_db` fixture
+- [x] `backend/app/main.py` — include players router at `/api/v1`
+- [x] Tests: create player, duplicate → 409, list players, leaderboard sorted by wins
 
 ---
 

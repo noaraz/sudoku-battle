@@ -10,3 +10,9 @@ export interface Cell {
 }
 
 export type Board = Cell[][];
+
+export interface Player {
+  name: string;
+  wins: number;
+  played: number;
+}

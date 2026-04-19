@@ -26,6 +26,20 @@ async def ac() -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest.fixture
+async def ac_with_db(db: firestore.AsyncClient) -> AsyncGenerator[AsyncClient, None]:
+    """AsyncClient with Firestore db attached to app.state — for endpoint tests.
+    Cleans up the players collection after each test."""
+    app.state.db = db
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        yield client
+    async for doc in db.collection("players").stream():
+        await db.collection("players").document(doc.id).delete()
+    app.state.db = None  # type: ignore[assignment]
+
+
+@pytest.fixture
 async def db() -> AsyncGenerator[firestore.AsyncClient, None]:
     """Firestore emulator client. Skipped if emulator is not running.
 
@@ -41,4 +55,4 @@ async def db() -> AsyncGenerator[firestore.AsyncClient, None]:
         project="sudoku-battle-local"
     )
     yield client
-    await client.close()
+    client.close()  # synchronous in google-cloud-firestore 2.x

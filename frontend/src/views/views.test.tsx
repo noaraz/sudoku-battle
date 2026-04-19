@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Timer } from "./Timer";
 import { NumPad } from "./NumPad";
@@ -168,5 +168,162 @@ describe("Board — related-cell highlighting", () => {
     cells.forEach((cell) => {
       expect(cell.className).not.toMatch(/\bbg-blue-100\b/);
     });
+  });
+});
+
+// ─── LoginScreen ────────────────────────────────────────────────────────────
+import { LoginScreen } from "./LoginScreen";
+
+describe("LoginScreen", () => {
+  const players = [
+    { name: "Alice", wins: 3, played: 5 },
+    { name: "Bob", wins: 1, played: 2 },
+  ];
+
+  it("renders a button for each known player", () => {
+    render(
+      <LoginScreen
+        knownPlayers={players}
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+      />
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("shows empty-state message when no players", () => {
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={vi.fn()} onAdd={vi.fn()} />
+    );
+    expect(screen.getByText(/no players yet/i)).toBeInTheDocument();
+  });
+
+  it("calls onSelect with player name when player row is clicked", async () => {
+    const onSelect = vi.fn();
+    render(
+      <LoginScreen
+        knownPlayers={players}
+        onSelect={onSelect}
+        onAdd={vi.fn()}
+      />
+    );
+    await userEvent.click(screen.getByText("Alice"));
+    expect(onSelect).toHaveBeenCalledWith("Alice");
+  });
+
+  it("shows add-player input when 'Add player' is clicked", async () => {
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={vi.fn()} onAdd={vi.fn()} />
+    );
+    await userEvent.click(screen.getByText(/add player/i));
+    expect(screen.getByPlaceholderText(/your name/i)).toBeInTheDocument();
+  });
+
+  it("calls onAdd then onSelect when new player is submitted", async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const onSelect = vi.fn();
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={onSelect} onAdd={onAdd} />
+    );
+    await userEvent.click(screen.getByText(/add player/i));
+    await userEvent.type(screen.getByPlaceholderText(/your name/i), "Carol");
+    await userEvent.click(screen.getByRole("button", { name: /^add$/i }));
+    expect(onAdd).toHaveBeenCalledWith("Carol");
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith("Carol"));
+  });
+
+  it("shows error message when onAdd throws 'name taken'", async () => {
+    const onAdd = vi.fn().mockRejectedValue(new Error("name taken"));
+    render(
+      <LoginScreen knownPlayers={[]} onSelect={vi.fn()} onAdd={onAdd} />
+    );
+    await userEvent.click(screen.getByText(/add player/i));
+    await userEvent.type(screen.getByPlaceholderText(/your name/i), "Alice");
+    await userEvent.click(screen.getByRole("button", { name: /^add$/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/name taken/i)).toBeInTheDocument()
+    );
+  });
+});
+
+// ─── LeaderboardScreen ──────────────────────────────────────────────────────
+import { LeaderboardScreen } from "./LeaderboardScreen";
+
+describe("LeaderboardScreen", () => {
+  const entries = [
+    { name: "Alice", wins: 5, played: 8 },
+    { name: "Bob", wins: 2, played: 4 },
+  ];
+
+  it("renders a ranked row for each entry", () => {
+    render(
+      <LeaderboardScreen entries={entries} loading={false} onBack={vi.fn()} />
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText(/5 wins/)).toBeInTheDocument();
+  });
+
+  it("shows loading state", () => {
+    render(
+      <LeaderboardScreen entries={[]} loading={true} onBack={vi.fn()} />
+    );
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it("shows empty state when no entries", () => {
+    render(
+      <LeaderboardScreen entries={[]} loading={false} onBack={vi.fn()} />
+    );
+    expect(screen.getByText(/no scores yet/i)).toBeInTheDocument();
+  });
+
+  it("calls onBack when back button is clicked", async () => {
+    const onBack = vi.fn();
+    render(
+      <LeaderboardScreen entries={entries} loading={false} onBack={onBack} />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /back|←/i }));
+    expect(onBack).toHaveBeenCalled();
+  });
+});
+
+// ─── Lobby ──────────────────────────────────────────────────────────────────
+import { Lobby } from "./Lobby";
+
+describe("Lobby", () => {
+  it("renders Solo, Battle, and Scores options", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    expect(screen.getByText(/solo/i)).toBeInTheDocument();
+    expect(screen.getByText(/battle/i)).toBeInTheDocument();
+    expect(screen.getByText(/scores/i)).toBeInTheDocument();
+  });
+
+  it("shows difficulty picker when Solo is clicked", async () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    await userEvent.click(screen.getByText(/solo/i));
+    expect(screen.getByText(/easy/i)).toBeInTheDocument();
+    expect(screen.getByText(/medium/i)).toBeInTheDocument();
+  });
+
+  it("calls onSolo with difficulty when difficulty is selected", async () => {
+    const onSolo = vi.fn();
+    render(<Lobby onSolo={onSolo} onScores={vi.fn()} />);
+    await userEvent.click(screen.getByText(/solo/i));
+    await userEvent.click(screen.getByRole("button", { name: /^easy$/i }));
+    expect(onSolo).toHaveBeenCalledWith("easy");
+  });
+
+  it("calls onScores when Scores is clicked", async () => {
+    const onScores = vi.fn();
+    render(<Lobby onSolo={vi.fn()} onScores={onScores} />);
+    await userEvent.click(screen.getByText(/scores/i));
+    expect(onScores).toHaveBeenCalled();
+  });
+
+  it("Battle button is disabled", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
   });
 });
