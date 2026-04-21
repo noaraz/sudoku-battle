@@ -64,7 +64,7 @@ async def room_ws(
     await websocket.accept()
 
     _connections.setdefault(room_id, {})[name] = websocket
-    _last_hb[(room_id, name)] = asyncio.get_event_loop().time()
+    _last_hb[(room_id, name)] = asyncio.get_running_loop().time()
 
     is_guest = name != room.host
 
@@ -97,6 +97,7 @@ async def room_ws(
     except WebSocketDisconnect:
         pass
     finally:
+        db.close()
         monitor.cancel()
         _connections.get(room_id, {}).pop(name, None)
         _last_hb.pop((room_id, name), None)
@@ -109,7 +110,7 @@ async def _handle(room_id: str, name: str, data: dict, db: Any) -> None:
     msg_type = data.get("type")
 
     if msg_type == "HEARTBEAT":
-        _last_hb[(room_id, name)] = asyncio.get_event_loop().time()
+        _last_hb[(room_id, name)] = asyncio.get_running_loop().time()
         await room_repo.refresh_ttl(db, room_id)
 
     elif msg_type == "PROGRESS":
@@ -139,7 +140,7 @@ async def _countdown(room_id: str, db: Any) -> None:
             except Exception:
                 pass
     await room_repo.update_status(db, room_id, RoomStatus.PLAYING)
-    _game_start[room_id] = asyncio.get_event_loop().time()
+    _game_start[room_id] = asyncio.get_running_loop().time()
 
 
 async def _monitor(room_id: str, name: str, db: Any) -> None:
@@ -149,7 +150,7 @@ async def _monitor(room_id: str, name: str, db: Any) -> None:
         last = _last_hb.get(key)
         if last is None:
             return
-        if asyncio.get_event_loop().time() - last > HEARTBEAT_TIMEOUT:
+        if asyncio.get_running_loop().time() - last > HEARTBEAT_TIMEOUT:
             logger.info("Heartbeat timeout: %s in room %s", name, room_id)
             room = await room_repo.get(db, room_id)
             if room and room.status == RoomStatus.PLAYING:
@@ -160,8 +161,8 @@ async def _monitor(room_id: str, name: str, db: Any) -> None:
                         await opp_ws.send_json({"type": "OPPONENT_DISCONNECTED"})
                     except Exception:
                         pass
-                    start = _game_start.get(room_id, asyncio.get_event_loop().time())
-                    elapsed_ms = int((asyncio.get_event_loop().time() - start) * 1000)
+                    start = _game_start.get(room_id, asyncio.get_running_loop().time())
+                    elapsed_ms = int((asyncio.get_running_loop().time() - start) * 1000)
                     won = await room_repo.set_winner(db, room_id, opponent)
                     if won:
                         await _finish(room_id, winner=opponent, winner_time_ms=elapsed_ms, db=db)
