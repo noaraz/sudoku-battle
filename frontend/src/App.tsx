@@ -23,9 +23,7 @@ export default function App() {
   const leaderboard = useLeaderboard();
   const room = useRoom(auth.selectedPlayer?.name ?? "");
 
-  const [screen, setScreen] = useState<Screen>(() =>
-    localStorage.getItem("selectedPlayer") ? "lobby" : "login"
-  );
+  const [screen, setScreen] = useState<Screen>("login");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [seed, setSeed] = useState(0);
   const [finishTime, setFinishTime] = useState(0);
@@ -39,8 +37,8 @@ export default function App() {
   const [playerProgress, setPlayerProgress] = useState(0);
 
   useEffect(() => {
-    if (!auth.selectedPlayer && screen !== "login") {
-      setScreen("login");
+    if (auth.selectedPlayer && screen === "login") {
+      setScreen("lobby");
     }
   }, [auth.selectedPlayer]);
 
