@@ -104,7 +104,7 @@ frontend/src/
 
 ### Component designs
 
-**LoginScreen** — list rows (initials avatar · name · wins) + "Add player" row at bottom. Matches the Option C style approved in brainstorming.
+**LoginScreen** — list rows (initials avatar · name · wins) + "Add player" row at bottom. Matches the Option C style approved in brainstorming. Empty state: "No players yet — add one below."
 
 **LeaderboardScreen** — ranked list: rank number · initials avatar · name · wins · played. Back button returns to lobby.
 
@@ -115,11 +115,12 @@ frontend/src/
 ```ts
 // State
 selectedPlayer: Player | null   // persisted to localStorage
-knownPlayers: Player[]          // fetched from GET /api/v1/players on mount
+knownPlayers: Player[]          // fetched from GET /api/v1/players on mount, sorted by name
 
 // Actions
 selectPlayer(name: string): void   // set selectedPlayer, save to localStorage
-addPlayer(name: string): Promise<void>  // POST /api/v1/players, then refresh knownPlayers
+addPlayer(name: string): Promise<void>  // POST /api/v1/players → refresh knownPlayers
+                                        // throws Error("name taken") on 409
 ```
 
 ### Tests
