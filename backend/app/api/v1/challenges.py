@@ -13,7 +13,9 @@ router = APIRouter(tags=["challenges"])
 
 
 @router.post("/challenges", status_code=201, response_model=ChallengeCreatedOut)
-async def create_challenge(body: CreateChallengeRequest, request: Request) -> ChallengeCreatedOut:
+async def create_challenge(
+    body: CreateChallengeRequest, request: Request
+) -> ChallengeCreatedOut:
     db = request.app.state.db
     if await player_repo.get(db, body.from_player) is None:
         raise HTTPException(404, f"Player '{body.from_player}' not found")
@@ -27,7 +29,9 @@ async def create_challenge(body: CreateChallengeRequest, request: Request) -> Ch
 
 
 @router.get("/players/{name}/challenges", response_model=list[PendingChallengeOut])
-async def get_pending_challenges(name: str, request: Request) -> list[PendingChallengeOut]:
+async def get_pending_challenges(
+    name: str, request: Request
+) -> list[PendingChallengeOut]:
     challenges = await challenge_repo.get_pending_for(request.app.state.db, name)
     return [
         PendingChallengeOut(
@@ -47,7 +51,9 @@ async def accept_challenge(challenge_id: str, request: Request) -> AcceptChallen
     room = await room_repo.get(db, ch.room_id)
     if room is None:
         raise HTTPException(404, "Room not found")
-    return AcceptChallengeOut(room_id=room.room_id, seed=room.seed, difficulty=room.difficulty)
+    return AcceptChallengeOut(
+        room_id=room.room_id, seed=room.seed, difficulty=room.difficulty
+    )
 
 
 @router.post("/challenges/{challenge_id}/decline", status_code=204)

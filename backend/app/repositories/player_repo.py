@@ -45,12 +45,12 @@ async def get(db: AsyncClient, name: str) -> Player | None:
 async def increment_stats(db: AsyncClient, winner: str, loser: str) -> None:
     """Increment wins+played for winner, played for loser. Best-effort — logs on failure."""
     try:
-        await db.collection(COLLECTION).document(winner).update(
-            {"wins": Increment(1), "played": Increment(1)}
+        await (
+            db.collection(COLLECTION)
+            .document(winner)
+            .update({"wins": Increment(1), "played": Increment(1)})
         )
-        await db.collection(COLLECTION).document(loser).update(
-            {"played": Increment(1)}
-        )
+        await db.collection(COLLECTION).document(loser).update({"played": Increment(1)})
     except Exception:
         logging.getLogger(__name__).error("increment_stats failed", exc_info=True)
 

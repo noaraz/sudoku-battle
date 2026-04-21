@@ -9,8 +9,12 @@ router = APIRouter(tags=["rooms"])
 
 def _to_room_out(room: Room) -> RoomOut:
     return RoomOut(
-        room_id=room.room_id, seed=room.seed, difficulty=room.difficulty,
-        host=room.host, guest=room.guest, status=room.status.value,
+        room_id=room.room_id,
+        seed=room.seed,
+        difficulty=room.difficulty,
+        host=room.host,
+        guest=room.guest,
+        status=room.status.value,
     )
 
 
@@ -19,7 +23,9 @@ async def create_room(body: CreateRoomRequest, request: Request) -> RoomOut:
     player = await player_repo.get(request.app.state.db, body.player_name)
     if player is None:
         raise HTTPException(status_code=404, detail="Player not found")
-    room = await room_repo.create(request.app.state.db, host=body.player_name, difficulty=body.difficulty)
+    room = await room_repo.create(
+        request.app.state.db, host=body.player_name, difficulty=body.difficulty
+    )
     return _to_room_out(room)
 
 
@@ -37,7 +43,9 @@ async def delete_room(room_id: str, body: DeleteRoomRequest, request: Request) -
     if room is None:
         raise HTTPException(status_code=404, detail="Room not found")
     if room.host != body.player_name:
-        raise HTTPException(status_code=403, detail="Only the host can delete this room")
+        raise HTTPException(
+            status_code=403, detail="Only the host can delete this room"
+        )
     if room.status != RoomStatus.WAITING:
         raise HTTPException(status_code=409, detail="Room is not in WAITING status")
     await room_repo.delete(request.app.state.db, room_id)

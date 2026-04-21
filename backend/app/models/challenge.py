@@ -17,4 +17,6 @@ class Challenge:
     room_id: str
     status: ChallengeStatus
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    expires_at: datetime = field(default_factory=lambda: datetime.now(UTC) + timedelta(minutes=10))
+    expires_at: datetime = field(
+        default_factory=lambda: datetime.now(UTC) + timedelta(minutes=10)
+    )

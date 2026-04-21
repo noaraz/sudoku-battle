@@ -17,6 +17,8 @@ class Room:
     seed: int
     status: RoomStatus
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    expires_at: datetime = field(default_factory=lambda: datetime.now(UTC) + timedelta(minutes=2))
+    expires_at: datetime = field(
+        default_factory=lambda: datetime.now(UTC) + timedelta(minutes=2)
+    )
     guest: str | None = None
     winner: str | None = None

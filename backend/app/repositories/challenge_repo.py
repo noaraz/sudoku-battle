@@ -55,8 +55,10 @@ async def get_pending_for(db: AsyncClient, player_name: str) -> list[Challenge]:
 async def update_status(
     db: AsyncClient, challenge_id: str, status: ChallengeStatus
 ) -> None:
-    await db.collection(COLLECTION).document(challenge_id).update(
-        {"status": status.value}
+    await (
+        db.collection(COLLECTION)
+        .document(challenge_id)
+        .update({"status": status.value})
     )
 
 

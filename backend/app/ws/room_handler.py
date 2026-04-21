@@ -116,10 +116,12 @@ async def _handle(room_id: str, name: str, data: dict[str, Any], db: Any) -> Non
     elif msg_type == "PROGRESS":
         opponent_ws = _opponent_ws(room_id, name)
         if opponent_ws:
-            await opponent_ws.send_json({
-                "type": "OPPONENT_PROGRESS",
-                "cells_filled": data.get("cells_filled", 0),
-            })
+            await opponent_ws.send_json(
+                {
+                    "type": "OPPONENT_PROGRESS",
+                    "cells_filled": data.get("cells_filled", 0),
+                }
+            )
 
     elif msg_type == "SUBMIT_RESULT":
         current = await room_repo.get(db, room_id)
@@ -165,7 +167,9 @@ async def _monitor(room_id: str, name: str, db: Any) -> None:
                     elapsed_ms = int((asyncio.get_running_loop().time() - start) * 1000)
                     won = await room_repo.set_winner(db, room_id, opponent)
                     if won:
-                        await _finish(room_id, winner=opponent, winner_time_ms=elapsed_ms, db=db)
+                        await _finish(
+                            room_id, winner=opponent, winner_time_ms=elapsed_ms, db=db
+                        )
             ws = _connections.get(room_id, {}).get(name)
             if ws:
                 try:
@@ -178,12 +182,14 @@ async def _monitor(room_id: str, name: str, db: Any) -> None:
 async def _finish(room_id: str, winner: str, winner_time_ms: int, db: Any) -> None:
     for ws in list(_connections.get(room_id, {}).values()):
         try:
-            await ws.send_json({
-                "type": "GAME_RESULTS",
-                "winner": winner,
-                "winner_time_ms": winner_time_ms,
-                "loser_time_ms": None,
-            })
+            await ws.send_json(
+                {
+                    "type": "GAME_RESULTS",
+                    "winner": winner,
+                    "winner_time_ms": winner_time_ms,
+                    "loser_time_ms": None,
+                }
+            )
         except Exception:
             pass
     loser = _opponent_name(room_id, winner)
@@ -196,7 +202,9 @@ async def _update_leaderboard(winner: str, loser: str, db: Any) -> None:
     try:
         await player_repo.increment_stats(db, winner=winner, loser=loser)
     except Exception:
-        logger.error("Leaderboard update failed for %s vs %s", winner, loser, exc_info=True)
+        logger.error(
+            "Leaderboard update failed for %s vs %s", winner, loser, exc_info=True
+        )
 
 
 def _opponent_ws(room_id: str, name: str) -> WebSocket | None:
