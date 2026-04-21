@@ -322,8 +322,25 @@ describe("Lobby", () => {
     expect(onScores).toHaveBeenCalled();
   });
 
-  it("Battle button is disabled", () => {
-    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+  it("calls onBattle when Battle is clicked", async () => {
+    const onBattle = vi.fn();
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} onBattle={onBattle} />);
+    await userEvent.click(screen.getByText(/battle/i));
+    expect(onBattle).toHaveBeenCalled();
+  });
+
+  it("shows pending challenge banner when pendingChallenge is set", () => {
+    render(
+      <Lobby
+        onSolo={vi.fn()}
+        onScores={vi.fn()}
+        pendingChallenge={{ challenge_id: "c1", from_player: "Alice" }}
+        onAcceptChallenge={vi.fn()}
+        onDeclineChallenge={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/alice/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument();
   });
 });
