@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 import pytest
 from google.cloud import firestore
 from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient as HttpxClient
 
 from app.main import app
 
@@ -36,6 +37,20 @@ async def ac_with_db(db: firestore.AsyncClient) -> AsyncGenerator[AsyncClient, N
         yield client
     async for doc in db.collection("players").stream():
         await db.collection("players").document(doc.id).delete()
+    app.state.db = None  # type: ignore[assignment]
+
+
+@pytest.fixture
+async def ac_with_rooms_db(db: firestore.AsyncClient) -> AsyncGenerator[HttpxClient, None]:
+    """HttpxClient with db for room+challenge+player endpoint tests. Cleans all collections."""
+    app.state.db = db
+    async with HttpxClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        yield client
+    for coll in ("players", "rooms", "challenges"):
+        async for doc in db.collection(coll).stream():
+            await db.collection(coll).document(doc.id).delete()
     app.state.db = None  # type: ignore[assignment]
 
 
