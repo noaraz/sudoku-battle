@@ -22,10 +22,10 @@ Custom hooks. ALL business logic lives here. Testable with `renderHook()`.
 - Derived: numRemaining{}, hasErrors, isComplete
 - Puzzle generated client-side from seed — both players get identical puzzle
 
-**useRoom()** — multiplayer
-- State: room, opponentFinished, countdown, wsConnected
-- Actions: createRoom(difficulty), joinRoom(), submitResult(time)
-- Manages WebSocket lifecycle
+**useRoom(playerName)** — multiplayer
+- State: room, countdown, opponentProgress, results, wsConnected, pendingChallenge, opponentDisconnected, challengeSentTo
+- Actions: createRoom(difficulty), sendChallenge(toPlayer, difficulty), joinRoom(code), submitResult(timeMs), sendProgress(cellsFilled), cancelRoom(), acceptChallenge(id), declineChallenge(id), startPolling(), stopPolling(), connectWs(roomId), disconnectWs()
+- Manages WebSocket lifecycle + 3s challenge polling
 
 **useLeaderboard()** — stats
 - State: entries[], loading
@@ -41,6 +41,9 @@ Pure rendering. No business logic. Delegate everything to ViewModel hooks.
 - LoginScreen, Lobby, WaitingRoom, Countdown
 - GameScreen (composes Board + NumPad + ActionBar + Timer + Toggles)
 - ResultsScreen, LeaderboardScreen
+- BattleMenu — player list (challenge) + join-by-code input
+- WaitingRoom — room code display, opponent slot, cancel
+- Countdown — 3-2-1-GO full-screen overlay (auto-dismisses 500ms after GO)
 
 ### Services (`src/services/`)
 - `api.ts` — REST client (auth, leaderboard)
@@ -66,3 +69,7 @@ An artifact prototype exists in the Claude.ai conversation where this project wa
 - Test all ViewModel hooks with renderHook()
 - Test puzzle generator: valid output, unique solutions, seed determinism, difficulty clue counts
 - TDD: write test → make it pass → refactor
+
+## Phase 3 References
+- **Plan:** `docs/superpowers/plans/2026-04-19-phase3-multiplayer.md`
+- **Spec:** `docs/superpowers/specs/2026-04-19-phase3-multiplayer-design.md`
