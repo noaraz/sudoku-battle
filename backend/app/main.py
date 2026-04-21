@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import firestore
 
+from app.api.v1 import challenges as challenges_router
 from app.api.v1 import players as players_router
 from app.api.v1 import rooms as rooms_router
 from app.core.config import get_settings
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    app.include_router(challenges_router.router, prefix="/api/v1")
     app.include_router(players_router.router, prefix="/api/v1")
     app.include_router(rooms_router.router, prefix="/api/v1")
 
