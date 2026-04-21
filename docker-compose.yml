@@ -23,6 +23,8 @@ services:
       - /app/node_modules
     ports:
       - "5174:5173"
+    environment:
+      - BACKEND_URL=http://backend:8000
     command: npm run dev -- --host 0.0.0.0
 
   firestore:

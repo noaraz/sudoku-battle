@@ -3,33 +3,78 @@ import { useEffect, useState } from "react";
 import { Difficulty } from "./models";
 import { useAuth } from "./viewmodels/useAuth";
 import { useLeaderboard } from "./viewmodels/useLeaderboard";
+import { useRoom } from "./viewmodels/useRoom";
 import { useTheme } from "./viewmodels/useTheme";
 import { recordTime } from "./utils/bestTimes";
+import { BattleMenu } from "./views/BattleMenu";
+import { Countdown } from "./views/Countdown";
 import { GameScreen } from "./views/GameScreen";
 import { LeaderboardScreen } from "./views/LeaderboardScreen";
 import { Lobby } from "./views/Lobby";
 import { LoginScreen } from "./views/LoginScreen";
 import { ResultsScreen } from "./views/ResultsScreen";
+import { WaitingRoom } from "./views/WaitingRoom";
 
-type Screen = "login" | "lobby" | "game" | "results" | "leaderboard";
+type Screen = "login" | "lobby" | "battle-menu" | "waiting" | "game" | "results" | "leaderboard";
 
 export default function App() {
   const { theme, toggle } = useTheme();
   const auth = useAuth();
   const leaderboard = useLeaderboard();
+  const room = useRoom(auth.selectedPlayer?.name ?? "");
 
-  const [screen, setScreen] = useState<Screen>(() =>
-    localStorage.getItem("selectedPlayer") ? "lobby" : "login"
-  );
+  const [screen, setScreen] = useState<Screen>("login");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [seed, setSeed] = useState(0);
   const [finishTime, setFinishTime] = useState(0);
+  const [battleResult, setBattleResult] = useState<{
+    winner: string;
+    winner_time_ms: number;
+    loser_time_ms: number | null;
+    playerName: string;
+    opponentName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (auth.selectedPlayer && screen === "login") {
+      setScreen("lobby");
+    }
+  }, [auth.selectedPlayer]);
 
   useEffect(() => {
     if (screen === "leaderboard") {
       void leaderboard.load();
     }
   }, [screen]);
+
+  useEffect(() => {
+    if (screen === "lobby") room.startPolling();
+    else room.stopPolling();
+  }, [screen]);
+
+  useEffect(() => {
+    if (room.results && screen === "game") {
+      setBattleResult({
+        winner: room.results.winner,
+        winner_time_ms: room.results.winner_time_ms,
+        loser_time_ms: room.results.loser_time_ms,
+        playerName: auth.selectedPlayer?.name ?? "",
+        opponentName: room.room
+          ? (room.room.host === auth.selectedPlayer?.name ? room.room.guest ?? "Opponent" : room.room.host)
+          : "Opponent",
+      });
+      setScreen("results");
+    }
+  }, [room.results, screen]);
+
+  useEffect(() => {
+    if (room.room?.status === "PLAYING" && screen === "waiting") {
+      setSeed(room.room.seed);
+      setDifficulty(room.room.difficulty);
+      setScreen("game");
+    }
+  }, [room.room?.status, screen]);
+
 
   function handleSolo(d: Difficulty) {
     setDifficulty(d);
@@ -39,8 +84,18 @@ export default function App() {
 
   function handleFinish(seconds: number) {
     setFinishTime(seconds);
-    recordTime(difficulty, seconds);
-    setScreen("results");
+    if (room.room) {
+      room.submitResult(seconds * 1000);
+    } else {
+      recordTime(difficulty, seconds);
+      setScreen("results");
+    }
+  }
+
+  function handlePlayAgain() {
+    setBattleResult(null);
+    room.disconnectWs();
+    setScreen("lobby");
   }
 
   return (
@@ -70,7 +125,52 @@ export default function App() {
         <Lobby
           onSolo={handleSolo}
           onScores={() => setScreen("leaderboard")}
+          onBattle={() => setScreen("battle-menu")}
+          pendingChallenge={room.pendingChallenge}
+          onAcceptChallenge={async (challengeId) => {
+            const data = await room.acceptChallenge(challengeId);
+            setDifficulty(data.difficulty as Difficulty);
+            setSeed(data.seed);
+            room.connectWs(data.room_id);
+            setScreen("waiting");
+          }}
+          onDeclineChallenge={room.declineChallenge}
         />
+      )}
+
+      {screen === "battle-menu" && (
+        <BattleMenu
+          players={auth.knownPlayers}
+          currentPlayer={auth.selectedPlayer?.name ?? ""}
+          onChallenge={async (toPlayer, diff) => {
+            const { room_id } = await room.sendChallenge(toPlayer, diff);
+            room.connectWs(room_id);
+            setScreen("waiting");
+          }}
+          onJoinByCode={async (code) => {
+            await room.joinRoom(code);
+            room.connectWs(code);
+            setScreen("waiting");
+          }}
+          onBack={() => setScreen("lobby")}
+        />
+      )}
+
+      {screen === "waiting" && room.room && (
+        <>
+          <Countdown n={room.countdown} />
+          <WaitingRoom
+            roomId={room.room.room_id}
+            host={room.room.host}
+            guest={room.room.guest}
+            challengeSentTo={room.challengeSentTo}
+            onCancel={async () => {
+              await room.cancelRoom();
+              room.disconnectWs();
+              setScreen("lobby");
+            }}
+          />
+        </>
       )}
 
       {screen === "game" && (
@@ -78,6 +178,14 @@ export default function App() {
           seed={seed}
           difficulty={difficulty}
           onFinish={handleFinish}
+          battleMode={!!room.room}
+          opponentName={
+            room.room
+              ? (room.room.host === auth.selectedPlayer?.name ? room.room.guest ?? undefined : room.room.host)
+              : undefined
+          }
+          opponentProgress={room.opponentProgress}
+          onProgressChange={room.sendProgress}
         />
       )}
 
@@ -85,7 +193,9 @@ export default function App() {
         <ResultsScreen
           seconds={finishTime}
           difficulty={difficulty}
-          onPlayAgain={() => setScreen("lobby")}
+          onPlayAgain={handlePlayAgain}
+          battleResult={battleResult ?? undefined}
+          onViewScores={battleResult ? () => setScreen("leaderboard") : undefined}
         />
       )}
 

@@ -24,13 +24,21 @@ describe("useAuth", () => {
     expect(result.current.selectedPlayer).toBeNull();
   });
 
-  it("restores selected player from localStorage", async () => {
-    localStorage.setItem(
-      "selectedPlayer",
-      JSON.stringify({ name: "Alice", wins: 3, played: 5 })
-    );
+  it("restores selected player from localStorage when backend confirms player exists", async () => {
+    mockGetPlayers.mockResolvedValue([{ name: "Alice", wins: 3, played: 5, created_at: "" }]);
+    localStorage.setItem("selectedPlayer", JSON.stringify({ name: "Alice", wins: 3, played: 5 }));
     const { result } = renderHook(() => useAuth());
+    await waitFor(() => result.current.selectedPlayer !== null);
     expect(result.current.selectedPlayer?.name).toBe("Alice");
+  });
+
+  it("clears stale localStorage player when backend does not know that player", async () => {
+    localStorage.setItem("selectedPlayer", JSON.stringify({ name: "Ghost", wins: 0, played: 0 }));
+    const { result } = renderHook(() => useAuth());
+    await waitFor(() => result.current.knownPlayers !== undefined);
+    // give the effect time to run
+    expect(result.current.selectedPlayer).toBeNull();
+    expect(localStorage.getItem("selectedPlayer")).toBeNull();
   });
 
   it("fetches known players on mount sorted by name", async () => {

@@ -47,3 +47,31 @@ async def test_leaderboard_sorted_by_wins_desc(
     entries = resp.json()
     names = [e["name"] for e in entries]
     assert names.index("Frank") < names.index("Eve")
+
+
+@pytest.mark.asyncio
+async def test_get_existing_player(db: firestore.AsyncClient) -> None:
+    from app.repositories import player_repo
+    await player_repo.create(db, "Greta")
+    player = await player_repo.get(db, "Greta")
+    assert player is not None
+    assert player.name == "Greta"
+
+
+@pytest.mark.asyncio
+async def test_get_missing_player_returns_none(db: firestore.AsyncClient) -> None:
+    from app.repositories import player_repo
+    player = await player_repo.get(db, "NoSuchPlayer")
+    assert player is None
+
+
+@pytest.mark.asyncio
+async def test_increment_stats(db: firestore.AsyncClient) -> None:
+    from app.repositories import player_repo
+    await player_repo.create(db, "Hana")
+    await player_repo.create(db, "Ivan")
+    await player_repo.increment_stats(db, winner="Hana", loser="Ivan")
+    hana = await player_repo.get(db, "Hana")
+    ivan = await player_repo.get(db, "Ivan")
+    assert hana is not None and hana.wins == 1 and hana.played == 1
+    assert ivan is not None and ivan.wins == 0 and ivan.played == 1
