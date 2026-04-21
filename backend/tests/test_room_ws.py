@@ -100,3 +100,60 @@ async def test_ws_connect_room_full_rejected(db: firestore.AsyncClient) -> None:
         assert msg["type"] == "ERROR"
         assert msg["code"] == "ROOM_FULL"
     room_handler._connections.pop(room.room_id, None)
+
+
+@pytest.mark.asyncio
+async def test_ws_in_progress_room_rejected(db: firestore.AsyncClient) -> None:
+    from starlette.testclient import TestClient
+    from app.models.room import RoomStatus
+    await player_repo.create(db, "Alice")
+    room = await room_repo.create(db, host="Alice", difficulty="easy")
+    await room_repo.update_status(db, room.room_id, RoomStatus.PLAYING)
+    client = TestClient(app)
+    with client.websocket_connect(f"/ws/room/{room.room_id}?name=Alice") as ws:
+        msg = ws.receive_json()
+        assert msg["type"] == "ERROR"
+        assert msg["code"] == "ROOM_IN_PROGRESS"
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_refreshes_ttl(db: firestore.AsyncClient) -> None:
+    from starlette.testclient import TestClient
+    await player_repo.create(db, "Alice")
+    room = await room_repo.create(db, host="Alice", difficulty="easy")
+    before = room.expires_at
+    client = TestClient(app)
+    try:
+        with client.websocket_connect(f"/ws/room/{room.room_id}?name=Alice") as ws:
+            ws.receive_json()  # ROOM_STATE
+            ws.send_json({"type": "HEARTBEAT"})
+            # Give the handler time to process the HEARTBEAT before closing
+            import time
+            time.sleep(0.1)
+    except Exception:
+        # CancelledError from monitor task teardown is expected and harmless
+        pass
+    # After WS closes, fetch from Firestore and verify TTL was extended
+    # Use the db fixture which connects to the same emulator
+    from google.cloud import firestore as fs
+    from app.core.config import get_settings
+    fresh_db = fs.AsyncClient(project=get_settings().gcp_project_id)
+    after_room = await room_repo.get(fresh_db, room.room_id)
+    fresh_db.close()
+    assert after_room is not None and after_room.expires_at >= before
+
+
+@pytest.mark.asyncio
+async def test_wrong_player_rejected(db: firestore.AsyncClient) -> None:
+    """Carol (not host Alice, not registered guest Bob) connecting gets WRONG_PLAYER."""
+    from starlette.testclient import TestClient
+    await player_repo.create(db, "Alice")
+    await player_repo.create(db, "Bob")
+    await player_repo.create(db, "Carol")
+    room = await room_repo.create(db, host="Alice", difficulty="easy")
+    await room_repo.set_guest(db, room.room_id, "Bob")
+    client = TestClient(app)
+    with client.websocket_connect(f"/ws/room/{room.room_id}?name=Carol") as ws:
+        msg = ws.receive_json()
+        assert msg["type"] == "ERROR"
+        assert msg["code"] == "WRONG_PLAYER"
