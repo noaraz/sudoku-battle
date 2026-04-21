@@ -34,7 +34,6 @@ export default function App() {
     playerName: string;
     opponentName: string;
   } | null>(null);
-  const [playerProgress, setPlayerProgress] = useState(0);
 
   useEffect(() => {
     if (auth.selectedPlayer && screen === "login") {
@@ -95,7 +94,6 @@ export default function App() {
 
   function handlePlayAgain() {
     setBattleResult(null);
-    setPlayerProgress(0);
     room.disconnectWs();
     setScreen("lobby");
   }
@@ -187,11 +185,7 @@ export default function App() {
               : undefined
           }
           opponentProgress={room.opponentProgress}
-          playerProgress={playerProgress}
-          onProgressChange={(filled) => {
-            setPlayerProgress(filled);
-            room.sendProgress(filled);
-          }}
+          onProgressChange={room.sendProgress}
         />
       )}
 

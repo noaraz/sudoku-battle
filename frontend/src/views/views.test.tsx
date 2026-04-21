@@ -498,10 +498,11 @@ describe("GameScreen", () => {
   });
 
   it("renders progress strip in battle mode", () => {
-    render(<GameScreen seed={1} difficulty="easy" onFinish={vi.fn()} battleMode={true} opponentName="Bob" opponentProgress={20} playerProgress={10} />);
+    render(<GameScreen seed={1} difficulty="easy" onFinish={vi.fn()} battleMode={true} opponentName="Bob" opponentProgress={20} />);
     expect(screen.getByText("You")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
-    expect(screen.getByText("10/81")).toBeInTheDocument();
+    // mock board has 1 pre-filled cell (cell 0-0), so playerProgress = 1
+    expect(screen.getByText("1/81")).toBeInTheDocument();
     expect(screen.getByText("20/81")).toBeInTheDocument();
   });
 
