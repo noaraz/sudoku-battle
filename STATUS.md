@@ -1,6 +1,6 @@
 # Status
 
-## Current Phase: 2 — Auth + Leaderboard
+## Current Phase: 5 — Deploy
 
 ## Phase Overview
 
@@ -11,8 +11,8 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
 | **0: Init** | Dev servers start; test suites run | ✅ Done |
 | **1: Solo Play** | Playable Sudoku in browser (no auth/network) | ✅ Done |
 | **2: Auth + Leaderboard** | Register, log in, see leaderboard | ✅ Done |
-| **3: Multiplayer** | Two tabs race on same puzzle | ⏳ Pending |
-| **4: Polish** | Production-quality on mobile | 🔄 In Progress |
+| **3: Multiplayer** | Two tabs race on same puzzle | ✅ Done |
+| **4: Polish** | Production-quality on mobile | ✅ Done |
 | **5: Deploy** | Live on Cloud Run (me-west1) | ⏳ Pending |
 
 ## Done
@@ -28,6 +28,14 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
   - Spec: [`docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md`](docs/superpowers/specs/2026-04-19-phase2-auth-leaderboard-design.md)
   - Plan: [`docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md`](docs/superpowers/plans/2026-04-19-phase2-auth-leaderboard.md)
 - [x] Lightning mode fixes — clear selection on toggle, related cells in lightning mode, tap filled cell to switch digit, numpad change clears stale related cells
+- [x] Phase 3: Multiplayer — WebSocket room handler, challenge flow, countdown, live progress bars, winner/loser results
+  - Spec: [`docs/superpowers/specs/2026-04-19-phase3-multiplayer-design.md`](docs/superpowers/specs/2026-04-19-phase3-multiplayer-design.md)
+  - Plan: [`docs/superpowers/plans/2026-04-19-phase3-multiplayer.md`](docs/superpowers/plans/2026-04-19-phase3-multiplayer.md)
+- [x] Phase 4: Polish — Vite proxy for Docker dev, server-first auth session restore, progress bar derived locally, name labels widened, ROOM_STATE(PLAYING) broadcast after countdown
 
 ## Next
-- [ ] Phase 3: Multiplayer
+- [ ] Phase 5: Deploy to Cloud Run (me-west1)
+  - Production Dockerfile (multi-stage: build frontend, serve from FastAPI)
+  - GCP project setup (Cloud Run + Firestore APIs, service account)
+  - Environment config for Cloud Run
+  - Optional: GitHub Actions CI/CD on merge to main
