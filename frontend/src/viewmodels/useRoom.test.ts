@@ -10,6 +10,7 @@ let mockOnMessage: ((msg: unknown) => void) | null = null;
 vi.mock("../services/ws", () => ({
   RoomWsClient: vi.fn().mockImplementation(() => ({
     onMessage: vi.fn((handler: (msg: unknown) => void) => { mockOnMessage = handler; }),
+    onOpen: vi.fn(),
     connect: vi.fn(),
     send: vi.fn(),
     close: vi.fn(),

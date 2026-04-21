@@ -47,6 +47,8 @@ async def accept_challenge(challenge_id: str, request: Request) -> AcceptChallen
     ch = await challenge_repo.get(db, challenge_id)
     if ch is None:
         raise HTTPException(404, "Challenge not found")
+    if ch.status != ChallengeStatus.PENDING:
+        raise HTTPException(409, "Challenge is no longer pending")
     await challenge_repo.update_status(db, challenge_id, ChallengeStatus.ACCEPTED)
     room = await room_repo.get(db, ch.room_id)
     if room is None:

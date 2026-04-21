@@ -1,10 +1,12 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
 class CreateChallengeRequest(BaseModel):
     from_player: str
     to_player: str
-    difficulty: str
+    difficulty: Literal["easy", "medium", "hard", "expert"]
 
 
 class ChallengeCreatedOut(BaseModel):

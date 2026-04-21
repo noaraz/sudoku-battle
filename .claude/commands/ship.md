@@ -107,7 +107,7 @@ Return the PR URL to the user.
 Invoke the code review skill on the PR:
 
 ```
-Skill tool: superpowers:code-reviewer, args: <PR URL>
+Skill tool: code-review:code-review, args: <PR URL>
 ```
 
 Present any issues found and offer to fix them.

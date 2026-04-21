@@ -157,3 +157,74 @@ async def test_wrong_player_rejected(db: firestore.AsyncClient) -> None:
         msg = ws.receive_json()
         assert msg["type"] == "ERROR"
         assert msg["code"] == "WRONG_PLAYER"
+
+
+@pytest.mark.asyncio
+async def test_ws_submit_result_sends_game_results_to_both(db: firestore.AsyncClient) -> None:
+    """First SUBMIT_RESULT sets winner and sends GAME_RESULTS to both players."""
+    from starlette.testclient import TestClient
+    from app.models.room import RoomStatus
+    await player_repo.create(db, "Alice")
+    await player_repo.create(db, "Bob")
+    room = await room_repo.create(db, host="Alice", difficulty="easy")
+    await room_repo.set_guest(db, room.room_id, "Bob")
+    await room_repo.update_status(db, room.room_id, RoomStatus.PLAYING)
+
+    client = TestClient(app)
+    with client.websocket_connect(f"/ws/room/{room.room_id}?name=Alice") as alice_ws:
+        alice_ws.receive_json()  # ROOM_STATE
+        with client.websocket_connect(f"/ws/room/{room.room_id}?name=Bob") as bob_ws:
+            bob_ws.receive_json()  # ROOM_STATE
+            alice_ws.send_json({"type": "SUBMIT_RESULT", "time_ms": 60000})
+            alice_result = alice_ws.receive_json()
+            bob_result = bob_ws.receive_json()
+            assert alice_result["type"] == "GAME_RESULTS"
+            assert alice_result["winner"] == "Alice"
+            assert alice_result["winner_time_ms"] == 60000
+            assert bob_result["type"] == "GAME_RESULTS"
+            assert bob_result["winner"] == "Alice"
+    # Room should be deleted
+    assert await room_repo.get(db, room.room_id) is None
+
+
+@pytest.mark.asyncio
+async def test_ws_simultaneous_submit_only_one_winner(db: firestore.AsyncClient) -> None:
+    """Transaction ensures only one winner even when both submit simultaneously."""
+    from starlette.testclient import TestClient
+    from app.models.room import RoomStatus
+    await player_repo.create(db, "Alice")
+    await player_repo.create(db, "Bob")
+    room = await room_repo.create(db, host="Alice", difficulty="easy")
+    await room_repo.set_guest(db, room.room_id, "Bob")
+    await room_repo.update_status(db, room.room_id, RoomStatus.PLAYING)
+
+    client = TestClient(app)
+    with client.websocket_connect(f"/ws/room/{room.room_id}?name=Alice") as alice_ws:
+        alice_ws.receive_json()  # ROOM_STATE
+        with client.websocket_connect(f"/ws/room/{room.room_id}?name=Bob") as bob_ws:
+            bob_ws.receive_json()  # ROOM_STATE
+            alice_ws.send_json({"type": "SUBMIT_RESULT", "time_ms": 50000})
+            bob_ws.send_json({"type": "SUBMIT_RESULT", "time_ms": 51000})
+            alice_result = alice_ws.receive_json()
+            bob_result = bob_ws.receive_json()
+            # Only one winner declared
+            assert alice_result["type"] == "GAME_RESULTS"
+            assert bob_result["type"] == "GAME_RESULTS"
+            assert alice_result["winner"] == bob_result["winner"]
+
+
+@pytest.mark.asyncio
+async def test_ws_accept_challenge_already_accepted_409(db: firestore.AsyncClient) -> None:
+    """Accepting an already-accepted challenge returns 409."""
+    from httpx import ASGITransport, AsyncClient as HttpxClient
+    await player_repo.create(db, "Alice")
+    await player_repo.create(db, "Bob")
+    app.state.db = db
+    async with HttpxClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/v1/challenges", json={"from_player": "Alice", "to_player": "Bob", "difficulty": "easy"})
+        challenge_id = resp.json()["challenge_id"]
+        r1 = await client.post(f"/api/v1/challenges/{challenge_id}/accept")
+        assert r1.status_code == 200
+        r2 = await client.post(f"/api/v1/challenges/{challenge_id}/accept")
+        assert r2.status_code == 409
+    app.state.db = None  # type: ignore[assignment]

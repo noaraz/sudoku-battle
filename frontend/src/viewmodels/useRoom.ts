@@ -83,9 +83,9 @@ export function useRoom(playerName: string): RoomState {
   const connectWs = useCallback((roomId: string) => {
     const client = new RoomWsClient();
     client.onMessage(handleWsMessage);
+    client.onOpen(() => setWsConnected(true));
     client.connect(roomId, playerName);
     wsRef.current = client;
-    setWsConnected(true);
   }, [playerName, handleWsMessage]);
 
   const disconnectWs = useCallback(() => {

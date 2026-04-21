@@ -1,8 +1,10 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
 class CreateRoomRequest(BaseModel):
-    difficulty: str
+    difficulty: Literal["easy", "medium", "hard", "expert"]
     player_name: str
 
 

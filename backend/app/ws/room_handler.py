@@ -52,8 +52,13 @@ async def room_ws(
         return await _reject("ROOM_NOT_FOUND", "Room not found")
     if room.status == RoomStatus.FINISHED:
         return await _reject("ROOM_FINISHED", "Room already finished")
+
+    # When PLAYING: allow only the registered host and guest to (re)connect.
+    # Any other player — or the host/guest when the room has no full pair — is rejected.
     if room.status == RoomStatus.PLAYING:
-        return await _reject("ROOM_IN_PROGRESS", "Room game already in progress")
+        is_participant = (name == room.host or name == room.guest) and room.guest is not None
+        if not is_participant:
+            return await _reject("ROOM_IN_PROGRESS", "Room game already in progress")
 
     existing = _connections.get(room_id, {})
     if len(existing) >= 2 and name not in existing:
@@ -83,7 +88,12 @@ async def room_ws(
     }
     await websocket.send_json(room_state)
 
-    if is_guest and room and room.host in _connections.get(room_id, {}):
+    if (
+        is_guest
+        and room
+        and room.status == RoomStatus.WAITING
+        and room.host in _connections.get(room_id, {})
+    ):
         host_ws = _connections[room_id][room.host]
         await host_ws.send_json(room_state)
         asyncio.create_task(_countdown(room_id, db))
@@ -128,7 +138,14 @@ async def _handle(room_id: str, name: str, data: dict[str, Any], db: Any) -> Non
         if not current or current.status != RoomStatus.PLAYING:
             return
         time_ms: int = data.get("time_ms", 0)
-        won = await room_repo.set_winner(db, room_id, name)
+        try:
+            won = await asyncio.shield(room_repo.set_winner(db, room_id, name))
+        except asyncio.CancelledError:
+            # Handler is being torn down; best-effort — swallow to allow clean exit.
+            return
+        except Exception:
+            logger.warning("set_winner failed for %s in room %s", name, room_id, exc_info=True)
+            return
         if won:
             await _finish(room_id, winner=name, winner_time_ms=time_ms, db=db)
 
@@ -141,6 +158,9 @@ async def _countdown(room_id: str, db: Any) -> None:
                 await ws.send_json({"type": "COUNTDOWN", "n": n})
             except Exception:
                 pass
+    room = await room_repo.get(db, room_id)
+    if room is None:
+        return
     await room_repo.update_status(db, room_id, RoomStatus.PLAYING)
     _game_start[room_id] = asyncio.get_running_loop().time()
     room = await room_repo.get(db, room_id)
@@ -196,22 +216,21 @@ async def _monitor(room_id: str, name: str, db: Any) -> None:
 
 
 async def _finish(room_id: str, winner: str, winner_time_ms: int, db: Any) -> None:
+    loser = _opponent_name(room_id, winner)
+    await room_repo.delete(db, room_id)
+    if loser:
+        await _update_leaderboard(winner, loser, db)
+    results_msg = {
+        "type": "GAME_RESULTS",
+        "winner": winner,
+        "winner_time_ms": winner_time_ms,
+        "loser_time_ms": None,
+    }
     for ws in list(_connections.get(room_id, {}).values()):
         try:
-            await ws.send_json(
-                {
-                    "type": "GAME_RESULTS",
-                    "winner": winner,
-                    "winner_time_ms": winner_time_ms,
-                    "loser_time_ms": None,
-                }
-            )
+            await ws.send_json(results_msg)
         except Exception:
             pass
-    loser = _opponent_name(room_id, winner)
-    if loser:
-        asyncio.create_task(_update_leaderboard(winner, loser, db))
-    await room_repo.delete(db, room_id)
 
 
 async def _update_leaderboard(winner: str, loser: str, db: Any) -> None:

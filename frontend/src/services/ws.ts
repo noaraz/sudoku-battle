@@ -12,6 +12,7 @@ export class RoomWsClient {
   private ws: WebSocket | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private handlers: MessageHandler[] = [];
+  private openHandlers: (() => void)[] = [];
 
   connect(roomId: string, playerName: string): void {
     const url = `${WS_BASE}/ws/room/${roomId}?name=${encodeURIComponent(playerName)}`;
@@ -19,6 +20,7 @@ export class RoomWsClient {
 
     this.ws.addEventListener("open", () => {
       this.heartbeatTimer = setInterval(() => this.send({ type: "HEARTBEAT" }), 30_000);
+      this.openHandlers.forEach((h) => h());
     });
 
     this.ws.addEventListener("message", (event) => {
@@ -43,11 +45,16 @@ export class RoomWsClient {
     this.handlers.push(handler);
   }
 
+  onOpen(handler: () => void): void {
+    this.openHandlers.push(handler);
+  }
+
   close(): void {
     this._clearHeartbeat();
     this.ws?.close();
     this.ws = null;
     this.handlers = [];
+    this.openHandlers = [];
   }
 
   private _clearHeartbeat(): void {
