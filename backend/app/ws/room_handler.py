@@ -97,7 +97,7 @@ async def room_ws(
     except WebSocketDisconnect:
         pass
     finally:
-        db.close()
+        db.close()  # type: ignore[no-untyped-call]
         monitor.cancel()
         _connections.get(room_id, {}).pop(name, None)
         _last_hb.pop((room_id, name), None)
@@ -106,7 +106,7 @@ async def room_ws(
             _game_start.pop(room_id, None)
 
 
-async def _handle(room_id: str, name: str, data: dict, db: Any) -> None:
+async def _handle(room_id: str, name: str, data: dict[str, Any], db: Any) -> None:
     msg_type = data.get("type")
 
     if msg_type == "HEARTBEAT":

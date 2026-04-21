@@ -1,6 +1,7 @@
 import secrets
 import string
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from google.api_core.exceptions import AlreadyExists
 from google.cloud.firestore_v1 import AsyncClient, async_transactional
@@ -68,7 +69,7 @@ async def set_winner(db: AsyncClient, room_id: str, winner: str) -> bool:
     """Atomically set winner. Returns True if this call set it, False if already set."""
     ref = db.collection(COLLECTION).document(room_id)
     transaction = db.transaction()
-    return await _set_winner_txn(transaction, ref, winner)  # type: ignore[return-value]
+    return await _set_winner_txn(transaction, ref, winner)
 
 
 async def refresh_ttl(db: AsyncClient, room_id: str) -> None:
@@ -80,7 +81,7 @@ async def delete(db: AsyncClient, room_id: str) -> None:
     await db.collection(COLLECTION).document(room_id).delete()
 
 
-def _to_dict(room: Room) -> dict:
+def _to_dict(room: Room) -> dict[str, Any]:
     return {
         "host": room.host,
         "guest": room.guest,
@@ -93,7 +94,7 @@ def _to_dict(room: Room) -> dict:
     }
 
 
-def _from_dict(room_id: str, data: dict) -> Room:
+def _from_dict(room_id: str, data: dict[str, Any]) -> Room:
     return Room(
         room_id=room_id,
         host=data["host"],

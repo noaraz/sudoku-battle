@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from google.cloud.firestore_v1 import AsyncClient
 
@@ -59,7 +60,7 @@ async def update_status(
     )
 
 
-def _to_dict(ch: Challenge) -> dict:
+def _to_dict(ch: Challenge) -> dict[str, Any]:
     return {
         "from_player": ch.from_player,
         "to_player": ch.to_player,
@@ -70,7 +71,7 @@ def _to_dict(ch: Challenge) -> dict:
     }
 
 
-def _from_dict(challenge_id: str, data: dict) -> Challenge:
+def _from_dict(challenge_id: str, data: dict[str, Any]) -> Challenge:
     return Challenge(
         challenge_id=challenge_id,
         from_player=data["from_player"],
