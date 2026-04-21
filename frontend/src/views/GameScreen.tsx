@@ -41,7 +41,7 @@ export function GameScreen({ seed, difficulty, onFinish, battleMode, playerName:
       {battleMode && (
         <div className="w-full max-w-[360px] bg-zinc-800 border-b border-zinc-700 px-3 py-2">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs text-blue-400 w-7">You</span>
+            <span className="text-xs text-blue-400 w-16 truncate">You</span>
             <div className="flex-1 bg-zinc-700 rounded h-1.5">
               <div
                 className="bg-blue-600 h-1.5 rounded transition-all duration-300"
@@ -51,7 +51,7 @@ export function GameScreen({ seed, difficulty, onFinish, battleMode, playerName:
             <span className="text-xs text-blue-400 w-8 text-right">{playerProgress ?? 0}/81</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-emerald-400 w-7 truncate">{opponentName ?? "?"}</span>
+            <span className="text-xs text-emerald-400 w-16 truncate">{opponentName ?? "?"}</span>
             <div className="flex-1 bg-zinc-700 rounded h-1.5">
               <div
                 className="bg-emerald-500 h-1.5 rounded transition-all duration-300"
