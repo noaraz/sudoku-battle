@@ -289,6 +289,228 @@ describe("LeaderboardScreen", () => {
   });
 });
 
+// ─── Countdown ──────────────────────────────────────────────────────────────
+import { Countdown } from "./Countdown";
+
+describe("Countdown", () => {
+  it("renders nothing when n is null", () => {
+    const { container } = render(<Countdown n={null} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renders the countdown number", () => {
+    render(<Countdown n={3} />);
+    expect(screen.getByText("3")).toBeInTheDocument();
+  });
+
+  it("renders GO! when n is 0", () => {
+    render(<Countdown n={0} />);
+    expect(screen.getByText("GO!")).toBeInTheDocument();
+  });
+});
+
+// ─── WaitingRoom ────────────────────────────────────────────────────────────
+import { WaitingRoom } from "./WaitingRoom";
+
+describe("WaitingRoom", () => {
+  it("renders the room code", () => {
+    render(<WaitingRoom roomId="ABC123" host="Alice" guest={null} challengeSentTo={null} onCancel={vi.fn()} />);
+    expect(screen.getByText("ABC123")).toBeInTheDocument();
+  });
+
+  it("renders the host name", () => {
+    render(<WaitingRoom roomId="ABC123" host="Alice" guest={null} challengeSentTo={null} onCancel={vi.fn()} />);
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("shows waiting message when guest is null", () => {
+    render(<WaitingRoom roomId="ABC123" host="Alice" guest={null} challengeSentTo={null} onCancel={vi.fn()} />);
+    expect(screen.getByText(/waiting for opponent/i)).toBeInTheDocument();
+  });
+
+  it("renders guest name when guest has joined", () => {
+    render(<WaitingRoom roomId="ABC123" host="Alice" guest="Bob" challengeSentTo={null} onCancel={vi.fn()} />);
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("shows challenge sent message when challengeSentTo is set", () => {
+    render(<WaitingRoom roomId="ABC123" host="Alice" guest={null} challengeSentTo="Bob" onCancel={vi.fn()} />);
+    expect(screen.getByText(/bob/i)).toBeInTheDocument();
+  });
+
+  it("calls onCancel when Cancel is clicked", async () => {
+    const onCancel = vi.fn();
+    render(<WaitingRoom roomId="ABC123" host="Alice" guest={null} challengeSentTo={null} onCancel={onCancel} />);
+    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(onCancel).toHaveBeenCalled();
+  });
+});
+
+// ─── BattleMenu ─────────────────────────────────────────────────────────────
+import { BattleMenu } from "./BattleMenu";
+import type { Player } from "../models";
+
+const makePlayers = (...names: string[]): Player[] =>
+  names.map((name) => ({ name, wins: 0, played: 0 }));
+
+describe("BattleMenu", () => {
+  it("renders difficulty buttons", () => {
+    render(<BattleMenu players={[]} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /easy/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /hard/i })).toBeInTheDocument();
+  });
+
+  it("shows empty state when no other players", () => {
+    render(<BattleMenu players={makePlayers("Alice")} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText(/no other players/i)).toBeInTheDocument();
+  });
+
+  it("renders other players excluding current player", () => {
+    render(<BattleMenu players={makePlayers("Alice", "Bob", "Carol")} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={vi.fn()} onBack={vi.fn()} />);
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText("Carol")).toBeInTheDocument();
+    expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+  });
+
+  it("calls onChallenge when Challenge is clicked", async () => {
+    const onChallenge = vi.fn().mockResolvedValue(undefined);
+    render(<BattleMenu players={makePlayers("Alice", "Bob")} currentPlayer="Alice" onChallenge={onChallenge} onJoinByCode={vi.fn()} onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: /challenge/i }));
+    expect(onChallenge).toHaveBeenCalledWith("Bob", expect.any(String));
+  });
+
+  it("shows error when join code is too short", async () => {
+    render(<BattleMenu players={[]} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={vi.fn()} onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    expect(screen.getByText(/6-character/i)).toBeInTheDocument();
+  });
+
+  it("calls onJoinByCode when a valid 6-char code is submitted", async () => {
+    const onJoin = vi.fn().mockResolvedValue(undefined);
+    render(<BattleMenu players={[]} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={onJoin} onBack={vi.fn()} />);
+    await userEvent.type(screen.getByPlaceholderText(/K7X2AB/i), "ABCDEF");
+    await userEvent.click(screen.getByRole("button", { name: /^join$/i }));
+    expect(onJoin).toHaveBeenCalledWith("ABCDEF");
+  });
+
+  it("calls onBack when Back is clicked", async () => {
+    const onBack = vi.fn();
+    render(<BattleMenu players={[]} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={vi.fn()} onBack={onBack} />);
+    await userEvent.click(screen.getByText(/← back/i));
+    expect(onBack).toHaveBeenCalled();
+  });
+
+  it("changes selected difficulty when clicked", async () => {
+    render(<BattleMenu players={[]} currentPlayer="Alice" onChallenge={vi.fn()} onJoinByCode={vi.fn()} onBack={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: /^easy$/i }));
+    expect(screen.getByRole("button", { name: /^easy$/i }).className).toContain("bg-blue-600");
+  });
+});
+
+// ─── ResultsScreen ──────────────────────────────────────────────────────────
+import { ResultsScreen } from "./ResultsScreen";
+
+describe("ResultsScreen — battle mode", () => {
+  const battleResult = {
+    winner: "Alice",
+    winner_time_ms: 90000,
+    loser_time_ms: null,
+    playerName: "Alice",
+    opponentName: "Bob",
+  };
+
+  it("shows 'You won!' when player is the winner", () => {
+    render(<ResultsScreen seconds={90} difficulty="easy" onPlayAgain={vi.fn()} battleResult={battleResult} />);
+    expect(screen.getByText(/you won/i)).toBeInTheDocument();
+  });
+
+  it("shows 'You lost' when player is the loser", () => {
+    render(
+      <ResultsScreen
+        seconds={90}
+        difficulty="easy"
+        onPlayAgain={vi.fn()}
+        battleResult={{ ...battleResult, winner: "Bob", playerName: "Alice" }}
+      />
+    );
+    expect(screen.getByText(/you lost/i)).toBeInTheDocument();
+  });
+
+  it("displays the winner name", () => {
+    render(<ResultsScreen seconds={90} difficulty="easy" onPlayAgain={vi.fn()} battleResult={battleResult} />);
+    expect(screen.getByText(/alice/i)).toBeInTheDocument();
+  });
+
+  it("shows Scores button when onViewScores is provided", () => {
+    render(<ResultsScreen seconds={90} difficulty="easy" onPlayAgain={vi.fn()} battleResult={battleResult} onViewScores={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /scores/i })).toBeInTheDocument();
+  });
+
+  it("calls onPlayAgain when Play Again is clicked", async () => {
+    const onPlayAgain = vi.fn();
+    render(<ResultsScreen seconds={90} difficulty="easy" onPlayAgain={onPlayAgain} battleResult={battleResult} />);
+    await userEvent.click(screen.getByRole("button", { name: /play again/i }));
+    expect(onPlayAgain).toHaveBeenCalled();
+  });
+});
+
+describe("ResultsScreen — solo mode", () => {
+  it("shows 'Puzzle Complete!'", () => {
+    render(<ResultsScreen seconds={120} difficulty="medium" onPlayAgain={vi.fn()} />);
+    expect(screen.getByText(/puzzle complete/i)).toBeInTheDocument();
+  });
+
+  it("formats time as MM:SS", () => {
+    render(<ResultsScreen seconds={125} difficulty="medium" onPlayAgain={vi.fn()} />);
+    expect(screen.getByText("2:05")).toBeInTheDocument();
+  });
+});
+
+// ─── GameScreen ─────────────────────────────────────────────────────────────
+import { GameScreen } from "./GameScreen";
+
+vi.mock("../viewmodels/useGame", () => ({
+  useGame: () => ({
+    board: Array.from({ length: 9 }, (_, r) =>
+      Array.from({ length: 9 }, (_, c) => ({ value: r * 9 + c === 0 ? 5 : 0, isGiven: r * 9 + c === 0, hasError: false }))
+    ),
+    solution: Array.from({ length: 9 }, () => Array(9).fill(1)),
+    selectedCell: null,
+    selectedNum: null,
+    highlightNum: null,
+    lightningMode: false,
+    lightningNum: null,
+    timer: 10,
+    isFinished: false,
+    numRemaining: Object.fromEntries(Array.from({ length: 9 }, (_, i) => [i + 1, 9])),
+    selectCell: vi.fn(),
+    inputNumber: vi.fn(),
+    erase: vi.fn(),
+    undo: vi.fn(),
+    toggleLightning: vi.fn(),
+  }),
+}));
+
+describe("GameScreen", () => {
+  it("renders without battle mode (no progress strip)", () => {
+    render(<GameScreen seed={1} difficulty="easy" onFinish={vi.fn()} />);
+    expect(screen.queryByText("You")).not.toBeInTheDocument();
+  });
+
+  it("renders progress strip in battle mode", () => {
+    render(<GameScreen seed={1} difficulty="easy" onFinish={vi.fn()} battleMode={true} opponentName="Bob" opponentProgress={20} playerProgress={10} />);
+    expect(screen.getByText("You")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getByText("10/81")).toBeInTheDocument();
+    expect(screen.getByText("20/81")).toBeInTheDocument();
+  });
+
+  it("shows '?' as opponent name when opponentName is not provided in battle mode", () => {
+    render(<GameScreen seed={1} difficulty="easy" onFinish={vi.fn()} battleMode={true} />);
+    expect(screen.getByText("?")).toBeInTheDocument();
+  });
+});
+
 // ─── Lobby ──────────────────────────────────────────────────────────────────
 import { Lobby } from "./Lobby";
 
