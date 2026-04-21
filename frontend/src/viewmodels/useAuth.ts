@@ -21,21 +21,19 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     getPlayers()
-      .then((players) =>
-        [...players].sort((a, b) => a.name.localeCompare(b.name))
-      )
-      .then(setKnownPlayers)
+      .then((players) => {
+        setKnownPlayers([...players].sort((a, b) => a.name.localeCompare(b.name)));
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const storedName = (JSON.parse(stored) as Player).name;
+          if (!players.find((p) => p.name === storedName)) {
+            setSelectedPlayer(null);
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        }
+      })
       .catch(() => {});
   }, []);
-
-  // Clear stale localStorage player once the player list is loaded
-  useEffect(() => {
-    if (knownPlayers.length === 0 || !selectedPlayer) return;
-    if (!knownPlayers.find((p) => p.name === selectedPlayer.name)) {
-      setSelectedPlayer(null);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [knownPlayers]);
 
   function selectPlayer(name: string): void {
     const player = knownPlayers.find((p) => p.name === name) ?? {
