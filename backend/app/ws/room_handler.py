@@ -56,7 +56,9 @@ async def room_ws(
     # When PLAYING: allow only the registered host and guest to (re)connect.
     # Any other player — or the host/guest when the room has no full pair — is rejected.
     if room.status == RoomStatus.PLAYING:
-        is_participant = (name == room.host or name == room.guest) and room.guest is not None
+        is_participant = (
+            name == room.host or name == room.guest
+        ) and room.guest is not None
         if not is_participant:
             return await _reject("ROOM_IN_PROGRESS", "Room game already in progress")
 
@@ -144,7 +146,9 @@ async def _handle(room_id: str, name: str, data: dict[str, Any], db: Any) -> Non
             # Handler is being torn down; best-effort — swallow to allow clean exit.
             return
         except Exception:
-            logger.warning("set_winner failed for %s in room %s", name, room_id, exc_info=True)
+            logger.warning(
+                "set_winner failed for %s in room %s", name, room_id, exc_info=True
+            )
             return
         if won:
             await _finish(room_id, winner=name, winner_time_ms=time_ms, db=db)
