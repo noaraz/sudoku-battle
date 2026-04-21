@@ -2,6 +2,7 @@ import string
 
 import pytest
 from google.cloud import firestore
+from httpx import AsyncClient
 
 from app.models.room import Room, RoomStatus
 from app.repositories import room_repo
@@ -76,8 +77,6 @@ async def test_refresh_ttl_extends_expiry(db: firestore.AsyncClient) -> None:
 
 # --- Endpoint tests ---
 
-from httpx import AsyncClient
-
 
 @pytest.mark.asyncio
 async def test_create_room_201(ac_with_rooms_db: AsyncClient) -> None:
@@ -143,3 +142,19 @@ async def test_delete_room_non_host_403(ac_with_rooms_db: AsyncClient) -> None:
         "DELETE", f"/api/v1/rooms/{room_id}", json={"player_name": "Bob"}
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_delete_room_not_waiting_409(ac_with_rooms_db: AsyncClient) -> None:
+    from app.main import app
+
+    await ac_with_rooms_db.post("/api/v1/players", json={"name": "Alice"})
+    create = await ac_with_rooms_db.post(
+        "/api/v1/rooms", json={"player_name": "Alice", "difficulty": "easy"}
+    )
+    room_id = create.json()["room_id"]
+    await room_repo.update_status(app.state.db, room_id, RoomStatus.PLAYING)
+    resp = await ac_with_rooms_db.request(
+        "DELETE", f"/api/v1/rooms/{room_id}", json={"player_name": "Alice"}
+    )
+    assert resp.status_code == 409
