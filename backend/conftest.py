@@ -54,5 +54,10 @@ async def db() -> AsyncGenerator[firestore.AsyncClient, None]:
     client: firestore.AsyncClient = firestore.AsyncClient(
         project="sudoku-battle-local"
     )
+    # Pre-test cleanup: clear players so each test starts from a clean slate.
+    async for doc in client.collection("players").stream():
+        await client.collection("players").document(doc.id).delete()
     yield client
+    async for doc in client.collection("players").stream():
+        await client.collection("players").document(doc.id).delete()
     client.close()  # synchronous in google-cloud-firestore 2.x
