@@ -39,6 +39,12 @@ export default function App() {
   const [playerProgress, setPlayerProgress] = useState(0);
 
   useEffect(() => {
+    if (!auth.selectedPlayer && screen !== "login") {
+      setScreen("login");
+    }
+  }, [auth.selectedPlayer]);
+
+  useEffect(() => {
     if (screen === "leaderboard") {
       void leaderboard.load();
     }
@@ -71,6 +77,7 @@ export default function App() {
       setScreen("game");
     }
   }, [room.room?.status, screen]);
+
 
   function handleSolo(d: Difficulty) {
     setDifficulty(d);

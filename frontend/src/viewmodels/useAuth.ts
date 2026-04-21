@@ -25,10 +25,17 @@ export function useAuth(): AuthState {
         [...players].sort((a, b) => a.name.localeCompare(b.name))
       )
       .then(setKnownPlayers)
-      .catch(() => {
-        // silently ignore network errors (e.g. backend not yet running)
-      });
+      .catch(() => {});
   }, []);
+
+  // Clear stale localStorage player once the player list is loaded
+  useEffect(() => {
+    if (knownPlayers.length === 0 || !selectedPlayer) return;
+    if (!knownPlayers.find((p) => p.name === selectedPlayer.name)) {
+      setSelectedPlayer(null);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [knownPlayers]);
 
   function selectPlayer(name: string): void {
     const player = knownPlayers.find((p) => p.name === name) ?? {

@@ -143,6 +143,22 @@ async def _countdown(room_id: str, db: Any) -> None:
                 pass
     await room_repo.update_status(db, room_id, RoomStatus.PLAYING)
     _game_start[room_id] = asyncio.get_running_loop().time()
+    room = await room_repo.get(db, room_id)
+    if room:
+        playing_state = {
+            "type": "ROOM_STATE",
+            "room_id": room_id,
+            "host": room.host,
+            "guest": room.guest,
+            "difficulty": room.difficulty,
+            "seed": room.seed,
+            "status": RoomStatus.PLAYING.value,
+        }
+        for ws in list(_connections.get(room_id, {}).values()):
+            try:
+                await ws.send_json(playing_state)
+            except Exception:
+                pass
 
 
 async def _monitor(room_id: str, name: str, db: Any) -> None:
