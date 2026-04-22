@@ -1,6 +1,7 @@
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,9 +62,27 @@ def create_app() -> FastAPI:
 
     app.add_api_websocket_route("/ws/room/{room_id}", room_ws)
 
-    # Static files mount — enabled in Phase 5 when Dockerfile builds frontend
-    # from fastapi.staticfiles import StaticFiles
-    # app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
+    # Static files (production Docker build only — frontend/dist must exist).
+    # In local dev the directory is absent and the backend runs API-only.
+    # Architecture:
+    #   /assets/* → StaticFiles (Vite-hashed JS/CSS bundles, long cache TTL OK)
+    #   /* catch-all → index.html (SPA fallback so React Router handles client routes)
+    #
+    # Note: Path is relative to uvicorn's CWD, which in Docker is WORKDIR /app.
+    _dist = Path("frontend/dist")
+    if _dist.exists():
+        from fastapi.responses import FileResponse
+        from fastapi.staticfiles import StaticFiles
+
+        app.mount(
+            "/assets",
+            StaticFiles(directory=str(_dist / "assets")),
+            name="assets",
+        )
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def spa_fallback(full_path: str) -> FileResponse:  # noqa: ARG001
+            return FileResponse(str(_dist / "index.html"))
 
     return app
 
