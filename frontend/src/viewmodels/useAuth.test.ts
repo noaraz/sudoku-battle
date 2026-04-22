@@ -28,17 +28,14 @@ describe("useAuth", () => {
     mockGetPlayers.mockResolvedValue([{ name: "Alice", wins: 3, played: 5, created_at: "" }]);
     localStorage.setItem("selectedPlayer", JSON.stringify({ name: "Alice", wins: 3, played: 5 }));
     const { result } = renderHook(() => useAuth());
-    await waitFor(() => result.current.selectedPlayer !== null);
-    expect(result.current.selectedPlayer?.name).toBe("Alice");
+    await waitFor(() => expect(result.current.selectedPlayer?.name).toBe("Alice"));
   });
 
   it("clears stale localStorage player when backend does not know that player", async () => {
     localStorage.setItem("selectedPlayer", JSON.stringify({ name: "Ghost", wins: 0, played: 0 }));
     const { result } = renderHook(() => useAuth());
-    await waitFor(() => result.current.knownPlayers !== undefined);
-    // give the effect time to run
+    await waitFor(() => expect(localStorage.getItem("selectedPlayer")).toBeNull());
     expect(result.current.selectedPlayer).toBeNull();
-    expect(localStorage.getItem("selectedPlayer")).toBeNull();
   });
 
   it("fetches known players on mount sorted by name", async () => {
@@ -47,7 +44,7 @@ describe("useAuth", () => {
       { name: "Alice", wins: 5, played: 6, created_at: "" },
     ]);
     const { result } = renderHook(() => useAuth());
-    await waitFor(() => result.current.knownPlayers.length > 0);
+    await waitFor(() => expect(result.current.knownPlayers.length).toBeGreaterThan(0));
     expect(result.current.knownPlayers[0].name).toBe("Alice");
     expect(result.current.knownPlayers[1].name).toBe("Zara");
   });
@@ -57,7 +54,7 @@ describe("useAuth", () => {
       { name: "Bob", wins: 2, played: 4, created_at: "" },
     ]);
     const { result } = renderHook(() => useAuth());
-    await waitFor(() => result.current.knownPlayers.length > 0);
+    await waitFor(() => expect(result.current.knownPlayers.length).toBeGreaterThan(0));
     act(() => result.current.selectPlayer("Bob"));
     expect(result.current.selectedPlayer?.name).toBe("Bob");
     const stored = JSON.parse(localStorage.getItem("selectedPlayer")!);
@@ -82,7 +79,7 @@ describe("useAuth", () => {
     });
     expect(mockCreatePlayer).toHaveBeenCalledWith("Carol");
     await waitFor(() =>
-      result.current.knownPlayers.some((p) => p.name === "Carol")
+      expect(result.current.knownPlayers.some((p) => p.name === "Carol")).toBe(true)
     );
   });
 
