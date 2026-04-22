@@ -1,6 +1,6 @@
 # Deploy to Cloud Run on git tag push (v*.*.*)
 # Requires GitHub Actions repository variables:
-#   WIF_PROVIDER, WIF_SERVICE_ACCOUNT, CLOUD_RUN_URL
+#   WIF_PROVIDER, WIF_SERVICE_ACCOUNT
 #
 # Spec: /Users/noa.raz/.claude/plans/let-s-plan-phase-validated-horizon.md
 # Plan: docs/superpowers/plans/2026-04-22-phase5-deploy.md
@@ -121,9 +121,9 @@ jobs:
             --image=${{ env.IMAGE }}:${{ github.ref_name }} \
             --region=${{ env.REGION }} \
             --service-account=sudoku-battle-runtime@${{ env.PROJECT }}.iam.gserviceaccount.com \
-            # ^|^ sets | as the env-var delimiter — needed because CORS_ORIGINS
-            # contains a JSON array with commas that confuse gcloud's default , parser.
-            --set-env-vars="^|^APP_ENV=production|GCP_PROJECT_ID=${{ env.PROJECT }}|CORS_ORIGINS=[\"${{ vars.CLOUD_RUN_URL }}\"]" \
+            # ^|^ sets | as the env-var delimiter — needed because CORS_ORIGIN_REGEX
+            # contains characters that confuse gcloud's default , parser.
+            --set-env-vars="^|^APP_ENV=production|GCP_PROJECT_ID=${{ env.PROJECT }}|CORS_ORIGIN_REGEX=https://sudoku-battle-[a-z0-9]+-zf\\.a\\.run\\.app" \
             --memory=512Mi \
             --cpu=1 \
             --min-instances=0 \
