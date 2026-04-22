@@ -35,7 +35,9 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
 
 ## Next
 - [ ] Phase 5: Deploy to Cloud Run (me-west1)
+  - Spec: `/Users/noa.raz/.claude/plans/let-s-plan-phase-validated-horizon.md`
+  - Plan: [`docs/superpowers/plans/2026-04-22-phase5-deploy.md`](docs/superpowers/plans/2026-04-22-phase5-deploy.md)
   - Production Dockerfile (multi-stage: build frontend, serve from FastAPI)
-  - GCP project setup (Cloud Run + Firestore APIs, service account)
-  - Environment config for Cloud Run
-  - Optional: GitHub Actions CI/CD on merge to main
+  - GCP project setup (Cloud Run + Firestore APIs, two service accounts, WIF)
+  - Tag-triggered GitHub Actions deploy workflow (`v*.*.*`)
+  - Firestore security rules (deny all direct access)
