@@ -28,8 +28,7 @@ describe("useAuth", () => {
     mockGetPlayers.mockResolvedValue([{ name: "Alice", wins: 3, played: 5, created_at: "" }]);
     localStorage.setItem("selectedPlayer", JSON.stringify({ name: "Alice", wins: 3, played: 5 }));
     const { result } = renderHook(() => useAuth());
-    await waitFor(() => result.current.selectedPlayer !== null);
-    expect(result.current.selectedPlayer?.name).toBe("Alice");
+    await waitFor(() => expect(result.current.selectedPlayer?.name).toBe("Alice"));
   });
 
   it("clears stale localStorage player when backend does not know that player", async () => {
