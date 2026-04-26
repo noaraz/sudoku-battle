@@ -13,9 +13,10 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
 | **2: Auth + Leaderboard** | Register, log in, see leaderboard | ✅ Done |
 | **3: Multiplayer** | Two tabs race on same puzzle | ✅ Done |
 | **4: Polish** | Production-quality on mobile | ✅ Done |
-| **5: Deploy** | Live on Cloud Run (me-west1) | ⏳ Pending |
+| **5: Deploy** | Live on Cloud Run (me-west1) | ✅ Done |
 
 ## Done
+- [x] Released v0.0.1 to Cloud Run
 - [x] Game spec written (`docs/GAME_SPEC.md`)
 - [x] Architecture decided (Cloud Run + Firestore + MVVM + TDD)
 - [x] Scaffold created
@@ -34,10 +35,10 @@ See [First Logic Phases Design](docs/superpowers/specs/2026-04-10-first-logic-ph
 - [x] Phase 4: Polish — Vite proxy for Docker dev, server-first auth session restore, progress bar derived locally, name labels widened, ROOM_STATE(PLAYING) broadcast after countdown
 
 ## Next
-- [ ] Phase 5: Deploy to Cloud Run (me-west1)
+- [ ] Phase 5: Deploy to Cloud Run (me-west1) — first deploy via `git tag v0.0.1 && git push origin v0.0.1`
   - Spec: `/Users/noa.raz/.claude/plans/let-s-plan-phase-validated-horizon.md`
   - Plan: [`docs/superpowers/plans/2026-04-22-phase5-deploy.md`](docs/superpowers/plans/2026-04-22-phase5-deploy.md)
-  - Production Dockerfile (multi-stage: build frontend, serve from FastAPI)
-  - GCP project setup (Cloud Run + Firestore APIs, two service accounts, WIF)
-  - Tag-triggered GitHub Actions deploy workflow (`v*.*.*`)
-  - Firestore security rules (deny all direct access)
+  - ✅ Production Dockerfile (multi-stage: build frontend, serve from FastAPI)
+  - ✅ GCP project setup (Cloud Run + Firestore APIs, two service accounts, WIF)
+  - ✅ Tag-triggered GitHub Actions deploy workflow (`v*.*.*`)
+  - ✅ Firestore security rules (deny all direct access)

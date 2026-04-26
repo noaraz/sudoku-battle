@@ -17,6 +17,14 @@ HEARTBEAT_CHECK = 30.0
 _connections: dict[str, dict[str, WebSocket]] = {}
 _last_hb: dict[tuple[str, str], float] = {}
 _game_start: dict[str, float] = {}
+_submit_locks: dict[str, asyncio.Lock] = {}  # per-room lock for SUBMIT_RESULT
+
+
+def _get_submit_lock(room_id: str) -> asyncio.Lock:
+    """Return (creating if needed) a per-room lock for SUBMIT_RESULT serialisation."""
+    if room_id not in _submit_locks:
+        _submit_locks[room_id] = asyncio.Lock()
+    return _submit_locks[room_id]
 
 
 def _get_db() -> firestore.AsyncClient:
@@ -140,16 +148,22 @@ async def _handle(room_id: str, name: str, data: dict[str, Any], db: Any) -> Non
         if not current or current.status != RoomStatus.PLAYING:
             return
         time_ms: int = data.get("time_ms", 0)
-        try:
-            won = await asyncio.shield(room_repo.set_winner(db, room_id, name))
-        except asyncio.CancelledError:
-            # Handler is being torn down; best-effort — swallow to allow clean exit.
-            return
-        except Exception:
-            logger.warning(
-                "set_winner failed for %s in room %s", name, room_id, exc_info=True
-            )
-            return
+        # Serialize winner resolution per room so that only one set_winner
+        # transaction runs at a time on this instance. This prevents the
+        # Firestore emulator lock-timeout that occurs when two concurrent
+        # transactions fight over the same document. In production it also
+        # reduces unnecessary Firestore write conflicts.
+        async with _get_submit_lock(room_id):
+            try:
+                won = await asyncio.shield(room_repo.set_winner(db, room_id, name))
+            except asyncio.CancelledError:
+                # Handler is being torn down; best-effort — swallow to allow clean exit.
+                return
+            except Exception:
+                logger.warning(
+                    "set_winner failed for %s in room %s", name, room_id, exc_info=True
+                )
+                return
         if won:
             await _finish(room_id, winner=name, winner_time_ms=time_ms, db=db)
 
@@ -222,6 +236,7 @@ async def _monitor(room_id: str, name: str, db: Any) -> None:
 async def _finish(room_id: str, winner: str, winner_time_ms: int, db: Any) -> None:
     loser = _opponent_name(room_id, winner)
     await room_repo.delete(db, room_id)
+    _submit_locks.pop(room_id, None)  # clean up per-room lock
     if loser:
         await _update_leaderboard(winner, loser, db)
     results_msg = {
