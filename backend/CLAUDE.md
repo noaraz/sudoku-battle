@@ -89,3 +89,7 @@ implementation in lock-step.
 ## Phase 3 References
 - **Plan:** `docs/superpowers/plans/2026-04-19-phase3-multiplayer.md`
 - **Spec:** `docs/superpowers/specs/2026-04-19-phase3-multiplayer-design.md`
+
+## Phase 5 References
+- **Plan:** `docs/superpowers/plans/2026-04-22-phase5-deploy.md`
+- **Spec:** `/Users/noa.raz/.claude/plans/let-s-plan-phase-validated-horizon.md`

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     gcp_project_id: str = "sudoku-battle-local"
     firestore_emulator_host: str | None = None
     cors_origins: list[str] = ["http://localhost:5174"]
+    cors_origin_regex: str = ""  # e.g. https://sudoku-battle-[a-z0-9]+-zf\.a\.run\.app
     port: int = 8001
 
     @model_validator(mode="after")

@@ -8,13 +8,15 @@ global.fetch = vi.fn();
 // Mock RoomWsClient so we can simulate incoming WS messages
 let mockOnMessage: ((msg: unknown) => void) | null = null;
 vi.mock("../services/ws", () => ({
-  RoomWsClient: vi.fn().mockImplementation(() => ({
-    onMessage: vi.fn((handler: (msg: unknown) => void) => { mockOnMessage = handler; }),
-    onOpen: vi.fn(),
-    connect: vi.fn(),
-    send: vi.fn(),
-    close: vi.fn(),
-  })),
+  RoomWsClient: vi.fn().mockImplementation(function () {
+    return {
+      onMessage: vi.fn((handler: (msg: unknown) => void) => { mockOnMessage = handler; }),
+      onOpen: vi.fn(),
+      connect: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn(),
+    };
+  }),
 }));
 
 const mockFetch = (data: unknown, status = 200) => {
