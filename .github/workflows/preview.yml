@@ -167,7 +167,9 @@ jobs:
   teardown:
     name: Tear down preview
     runs-on: ubuntu-latest
-    if: github.event.action == 'closed'
+    if: |
+      github.event.action == 'closed' &&
+      contains(github.event.pull_request.title, '[gcloud preview]')
 
     permissions:
       contents: read

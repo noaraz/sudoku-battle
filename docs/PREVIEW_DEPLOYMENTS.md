@@ -61,6 +61,10 @@ When the PR is closed (merged or abandoned), the workflow automatically:
 If you initially opened a PR without `[gcloud preview]` and change your mind,
 just edit the PR title to add it. The workflow fires on title edits too.
 
+## Known quirks
+
+**Title edits re-trigger the workflow.** The GitHub `pull_request: edited` event fires whenever the PR title, body, or labels change — not just the title. If you edit the PR body after adding `[gcloud preview]` to the title, a redundant deploy is triggered. It's harmless (the concurrency group cancels any already-running deploy), just slightly wasteful.
+
 ## Cost
 
 Preview revisions are zero-traffic (no production requests routed to them).
