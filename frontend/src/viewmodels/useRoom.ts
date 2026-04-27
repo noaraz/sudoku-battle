@@ -154,7 +154,17 @@ export function useRoom(playerName: string): RoomState {
   const acceptChallenge = useCallback(async (challengeId: string) => {
     const res = await fetch(`${API}/api/v1/challenges/${challengeId}/accept`, { method: "POST" });
     if (!res.ok) throw new Error("Failed to accept challenge");
-    return res.json() as Promise<{ room_id: string; seed: number; difficulty: string }>;
+    const data = await res.json() as { room_id: string; seed: number; difficulty: string };
+    // Fetch the full room and hydrate state (same as joinRoom) so the waiting
+    // screen renders correctly — room.room must be non-null.
+    const roomRes = await fetch(`${API}/api/v1/rooms/${data.room_id}`);
+    if (roomRes.ok) {
+      const roomData = await roomRes.json() as Room;
+      setRoom(roomData);
+      currentRoomId.current = data.room_id;
+    }
+    setPendingChallenge(null);
+    return data;
   }, []);
 
   const declineChallenge = useCallback(async (challengeId: string) => {
