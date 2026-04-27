@@ -87,7 +87,7 @@ jobs:
         run: ruff format --check app/
 
       - name: pip-audit
-        run: pip install pip-audit && pip-audit
+        run: pip install --upgrade pip pip-audit && pip-audit
 
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
