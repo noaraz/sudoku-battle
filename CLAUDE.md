@@ -29,7 +29,8 @@ sudoku-battle/
 │   ├── CLAUDE.md       # Frontend context + plan
 │   └── src/            # React app
 └── docs/
-    └── GAME_SPEC.md    # Full game specification (START HERE)
+    ├── GAME_SPEC.md              # Full game specification (START HERE)
+    └── PREVIEW_DEPLOYMENTS.md    # Cloud Run PR preview deployments
 ```
 
 ## Claude Code Setup
@@ -62,6 +63,10 @@ gcloud run deploy sudoku-battle --source . --region=me-west1
 1. Read `docs/GAME_SPEC.md` — it has everything
 2. Use `/brainstorming` to generate PLAN.md files for backend and frontend
 3. Start with Phase 1 (solo play, no network) — it's the foundation
+
+## Slash Commands
+- `/ship` — open a PR for the current branch (asks about preview deployment)
+- `/release` — cut a version tag and deploy to production
 
 ## Claude Code Notes
 - `.claude/settings.local.json` — auto-generated session permissions, gitignored (personal)
