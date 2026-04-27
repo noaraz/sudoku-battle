@@ -109,6 +109,18 @@ jobs:
             echo "Preview DB created and seeded from prod."
           fi
 
+      - name: Deploy composite indexes to preview Firestore database
+        run: |
+          # Named databases don't inherit indexes from (default) — create them explicitly.
+          # gcloud returns non-zero if the index already exists; || true makes this idempotent.
+          gcloud firestore indexes composite create \
+            --collection-group=challenges \
+            --field-config=field-path=to_player,order=ascending \
+            --field-config=field-path=status,order=ascending \
+            --field-config=field-path=created_at,order=ascending \
+            --database=${{ env.DB_NAME }} \
+            --project=${{ env.PROJECT }} || true
+
       - name: Deploy preview revision to Cloud Run
         run: |
           # ^|^ sets | as the env-var delimiter (CORS_ORIGIN_REGEX contains commas)
