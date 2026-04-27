@@ -7,7 +7,7 @@ name = "sudoku-battle"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.136.0",
+    "fastapi>=0.136.1",
     "uvicorn[standard]>=0.30",
     "google-cloud-firestore>=2.27.0",
     "bcrypt>=4.1",
