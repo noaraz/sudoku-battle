@@ -82,7 +82,7 @@ describe("useAuth", () => {
     });
     expect(mockCreatePlayer).toHaveBeenCalledWith("Carol");
     await waitFor(() =>
-      result.current.knownPlayers.some((p) => p.name === "Carol")
+      expect(result.current.knownPlayers.some((p) => p.name === "Carol")).toBe(true)
     );
   });
 
