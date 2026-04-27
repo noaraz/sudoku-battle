@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5174"]
     cors_origin_regex: str = ""  # e.g. https://sudoku-battle-[a-z0-9]+-zf\.a\.run\.app
     port: int = 8001
+    firestore_database: str = "(default)"
 
     @model_validator(mode="after")
     def cors_origins_not_wildcard(self) -> "Settings":
