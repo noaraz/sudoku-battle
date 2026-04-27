@@ -120,6 +120,34 @@ describe("useRoom", () => {
     expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callCount);
   });
 
+  it("acceptChallenge hydrates room state and clears pendingChallenge", async () => {
+    // First, seed a pending challenge via polling
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true, status: 200,
+      json: async () => [{ challenge_id: "chal1", from_player: "Bob", room_id: "ROOM99" }],
+    });
+    const { result } = renderHook(() => useRoom("Alice"));
+    act(() => result.current.startPolling());
+    await act(async () => { vi.advanceTimersByTime(3000); });
+    expect(result.current.pendingChallenge?.challenge_id).toBe("chal1");
+    act(() => result.current.stopPolling());
+
+    // Accept challenge: POST returns { room_id, seed, difficulty }
+    mockFetch({ room_id: "ROOM99", seed: 42, difficulty: "medium" });
+    // Then GET /api/v1/rooms/ROOM99 returns the full room
+    mockFetch({ room_id: "ROOM99", host: "Bob", guest: "Alice", difficulty: "medium", seed: 42, status: "WAITING" });
+
+    await act(async () => {
+      await result.current.acceptChallenge("chal1");
+    });
+
+    expect(result.current.room?.room_id).toBe("ROOM99");
+    expect(result.current.room?.host).toBe("Bob");
+    expect(result.current.room?.guest).toBe("Alice");
+    expect(result.current.room?.status).toBe("WAITING");
+    expect(result.current.pendingChallenge).toBeNull();
+  });
+
   it("cancelRoom clears room state", async () => {
     mockFetch({ room_id: "ABCDEF", seed: 123, difficulty: "easy" });
     mockFetch({}, 204); // DELETE response
