@@ -3,8 +3,8 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /frontend
 # Install deps before copying source for better layer caching
-COPY frontend/package*.json ./
-RUN npm ci
+COPY frontend/package.json ./
+RUN npm install
 COPY frontend/ ./
 # npm run build runs: tsc -b && vite build → outputs to /frontend/dist/
 RUN npm run build
