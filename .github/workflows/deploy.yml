@@ -73,10 +73,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: vitest
         run: npx vitest run --reporter=dot
 
@@ -117,12 +115,12 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
+          # ^|^ sets | as the env-var delimiter — needed because CORS_ORIGIN_REGEX
+          # contains characters that confuse gcloud's default , parser.
           gcloud run deploy ${{ env.SERVICE }} \
             --image=${{ env.IMAGE }}:${{ github.ref_name }} \
             --region=${{ env.REGION }} \
             --service-account=sudoku-battle-runtime@${{ env.PROJECT }}.iam.gserviceaccount.com \
-            # ^|^ sets | as the env-var delimiter — needed because CORS_ORIGIN_REGEX
-            # contains characters that confuse gcloud's default , parser.
             --set-env-vars="^|^APP_ENV=production|GCP_PROJECT_ID=${{ env.PROJECT }}|CORS_ORIGIN_REGEX=https://sudoku-battle-[a-z0-9]+-zf\\.a\\.run\\.app" \
             --memory=512Mi \
             --cpu=1 \
