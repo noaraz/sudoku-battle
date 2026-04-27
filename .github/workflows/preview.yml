@@ -68,23 +68,33 @@ jobs:
           docker build -t ${{ env.IMAGE }}:${{ env.PR_TAG }} .
           docker push ${{ env.IMAGE }}:${{ env.PR_TAG }}
 
-      - name: Ensure preview Firestore database exists (create once, skip if exists)
+      - name: Ensure preview Firestore database exists and is seeded
         run: |
-          # Get location of the default DB to match for the named DB
-          LOCATION=$(gcloud firestore databases describe \
-            --database='(default)' \
-            --project=${{ env.PROJECT }} \
-            --format='value(locationId)')
+          # Use a GCS marker object to track whether seeding completed successfully.
+          # Checking only DB existence is not enough — a previous run may have created
+          # the DB but failed during export/import, leaving it empty.
+          SEED_MARKER="${{ env.EXPORT_PATH }}/.seeded"
 
-          # Create named database if it doesn't already exist
-          if ! gcloud firestore databases describe \
-              --database=${{ env.DB_NAME }} \
+          if gsutil -q stat "${SEED_MARKER}" 2>/dev/null; then
+            echo "Seed marker found — DB already seeded. Skipping."
+          else
+            echo "No seed marker — creating and seeding preview DB."
+
+            # Get location of the default DB to match for the named DB
+            LOCATION=$(gcloud firestore databases describe \
+              --database='(default)' \
               --project=${{ env.PROJECT }} \
-              --format='value(name)' 2>/dev/null; then
+              --format='value(locationId)')
+
+            # Create named database (idempotent — ok if it already exists)
             gcloud firestore databases create \
               --database=${{ env.DB_NAME }} \
               --location="${LOCATION}" \
-              --project=${{ env.PROJECT }}
+              --project=${{ env.PROJECT }} 2>/dev/null || \
+            gcloud firestore databases describe \
+              --database=${{ env.DB_NAME }} \
+              --project=${{ env.PROJECT }} \
+              --format='value(name)' > /dev/null
 
             # Seed from prod: export default DB → GCS → import into named DB
             gcloud firestore export ${{ env.EXPORT_PATH }} \
@@ -94,9 +104,9 @@ jobs:
               --database=${{ env.DB_NAME }} \
               --project=${{ env.PROJECT }} || exit 1
 
+            # Write seed marker so future reruns skip this step
+            echo "seeded $(date -u +%Y-%m-%dT%H:%M:%SZ)" | gsutil cp - "${SEED_MARKER}"
             echo "Preview DB created and seeded from prod."
-          else
-            echo "Preview DB already exists — skipping seed (preserving existing data)."
           fi
 
       - name: Deploy preview revision to Cloud Run
