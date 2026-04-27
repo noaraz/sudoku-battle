@@ -114,7 +114,9 @@ async def room_ws(
         while True:
             data: dict[str, Any] = await websocket.receive_json()
             await _handle(room_id, name, data, db)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, asyncio.CancelledError):
+        # WebSocketDisconnect: client closed normally.
+        # CancelledError: server shutting down or TestClient tearing down the task.
         pass
     finally:
         db.close()  # type: ignore[no-untyped-call]
