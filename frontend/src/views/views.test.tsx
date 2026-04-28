@@ -552,18 +552,6 @@ describe("Lobby", () => {
     expect(onBattle).toHaveBeenCalled();
   });
 
-  it("shows pending challenge banner when pendingChallenge is set", () => {
-    render(
-      <Lobby
-        onSolo={vi.fn()}
-        onScores={vi.fn()}
-        pendingChallenge={{ challenge_id: "c1", from_player: "Alice" }}
-        onAcceptChallenge={vi.fn()}
-        onDeclineChallenge={vi.fn()}
-      />
-    );
-    expect(screen.getByText(/alice/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument();
-  });
+  // Challenge notification banner is now rendered at the App level (not inside Lobby)
+  // so it appears on both lobby and battle-menu screens. Tested in App-level tests.
 });
