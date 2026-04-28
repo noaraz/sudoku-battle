@@ -93,4 +93,20 @@ describe("useAuth", () => {
       "name taken"
     );
   });
+
+  it("logout clears selectedPlayer from state and localStorage", async () => {
+    mockGetPlayers.mockResolvedValue([{ name: "Alice", wins: 3, played: 5, created_at: "" }]);
+    localStorage.setItem("selectedPlayer", JSON.stringify({ name: "Alice", wins: 3, played: 5 }));
+    const { result } = renderHook(() => useAuth());
+    await waitFor(() => expect(result.current.selectedPlayer?.name).toBe("Alice"));
+    act(() => result.current.logout());
+    expect(result.current.selectedPlayer).toBeNull();
+    expect(localStorage.getItem("selectedPlayer")).toBeNull();
+  });
+
+  it("logout is callable even when no player is selected", async () => {
+    const { result } = renderHook(() => useAuth());
+    expect(() => act(() => result.current.logout())).not.toThrow();
+    expect(result.current.selectedPlayer).toBeNull();
+  });
 });

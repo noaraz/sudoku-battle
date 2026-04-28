@@ -148,6 +148,11 @@ export default function App() {
           onSolo={handleSolo}
           onScores={() => setScreen("leaderboard")}
           onBattle={() => setScreen("battle-menu")}
+          playerName={auth.selectedPlayer?.name}
+          onLogout={() => {
+            auth.logout();
+            setScreen("login");
+          }}
         />
       )}
 

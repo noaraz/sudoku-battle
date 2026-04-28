@@ -8,6 +8,7 @@ interface AuthState {
   knownPlayers: Player[];
   selectPlayer: (name: string) => void;
   addPlayer: (name: string) => Promise<void>;
+  logout: () => void;
 }
 
 const STORAGE_KEY = "selectedPlayer";
@@ -47,5 +48,10 @@ export function useAuth(): AuthState {
     setKnownPlayers([...updated].sort((a, b) => a.name.localeCompare(b.name)));
   }
 
-  return { selectedPlayer, knownPlayers, selectPlayer, addPlayer };
+  function logout(): void {
+    setSelectedPlayer(null);
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  return { selectedPlayer, knownPlayers, selectPlayer, addPlayer, logout };
 }
