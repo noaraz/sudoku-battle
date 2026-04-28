@@ -156,7 +156,6 @@ export default function App() {
           onSolo={handleSolo}
           onScores={() => setScreen("leaderboard")}
           onBattle={() => setScreen("battle-menu")}
-          onDeclineChallenge={room.declineChallenge}
         />
       )}
 

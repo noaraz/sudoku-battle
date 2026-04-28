@@ -8,10 +8,9 @@ interface Props {
   onSolo: (difficulty: Difficulty) => void;
   onScores: () => void;
   onBattle?: () => void;
-  onDeclineChallenge?: (challengeId: string) => void;
 }
 
-export function Lobby({ onSolo, onScores, onBattle, onDeclineChallenge }: Props) {
+export function Lobby({ onSolo, onScores, onBattle }: Props) {
   const [showDifficulty, setShowDifficulty] = useState(false);
 
   if (showDifficulty) {
