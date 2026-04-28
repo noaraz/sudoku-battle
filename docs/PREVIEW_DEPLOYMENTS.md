@@ -56,6 +56,8 @@ When the PR is closed (merged or abandoned), the workflow automatically:
 - Deletes the GCS export objects used for seeding
 - Posts a teardown confirmation comment on the PR
 
+Teardown runs on **every** PR close, regardless of whether `[gcloud preview]` is still in the title. Each cleanup step checks for existence before deleting, so it is harmless for PRs that never had a preview deployed.
+
 ## Regretting "no preview"
 
 If you initially opened a PR without `[gcloud preview]` and change your mind,

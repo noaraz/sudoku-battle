@@ -7,6 +7,7 @@ import { useRoom } from "./viewmodels/useRoom";
 import { useTheme } from "./viewmodels/useTheme";
 import { recordTime } from "./utils/bestTimes";
 import { BattleMenu } from "./views/BattleMenu";
+import { ChallengeNotification } from "./views/ChallengeNotification";
 import { Countdown } from "./views/Countdown";
 import { GameScreen } from "./views/GameScreen";
 import { LeaderboardScreen } from "./views/LeaderboardScreen";
@@ -124,31 +125,22 @@ export default function App() {
       {/* Challenge notification — shown on lobby and battle-menu so receiver sees it
           even if they navigated away from the lobby to challenge someone else */}
       {room.pendingChallenge && (screen === "lobby" || screen === "battle-menu") && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
-          <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 flex items-center gap-3 shadow-lg">
-            <span className="flex-1 text-sm text-white">
-              ⚔️ <strong>{room.pendingChallenge.from_player}</strong> challenged you!
-            </span>
-            <button
-              onClick={async () => {
-                const data = await room.acceptChallenge(room.pendingChallenge!.challenge_id);
-                setDifficulty(data.difficulty as Difficulty);
-                setSeed(data.seed);
-                room.connectWs(data.room_id);
-                setScreen("waiting");
-              }}
-              className="bg-blue-600 text-white text-xs px-3 py-1 rounded"
-            >
-              Accept
-            </button>
-            <button
-              onClick={() => room.declineChallenge(room.pendingChallenge!.challenge_id)}
-              className="bg-zinc-700 text-zinc-300 text-xs px-3 py-1 rounded"
-            >
-              Decline
-            </button>
-          </div>
-        </div>
+        <ChallengeNotification
+          fromPlayer={room.pendingChallenge.from_player}
+          onAccept={async () => {
+            try {
+              const data = await room.acceptChallenge(room.pendingChallenge!.challenge_id);
+              setDifficulty(data.difficulty as Difficulty);
+              setSeed(data.seed);
+              room.connectWs(data.room_id);
+              setScreen("waiting");
+            } catch {
+              // acceptChallenge already cleared pendingChallenge on success;
+              // on failure the notification stays so the user can retry or decline.
+            }
+          }}
+          onDecline={() => room.declineChallenge(room.pendingChallenge!.challenge_id)}
+        />
       )}
 
       {screen === "lobby" && (

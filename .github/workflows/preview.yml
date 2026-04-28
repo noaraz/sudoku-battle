@@ -189,9 +189,11 @@ jobs:
   teardown:
     name: Tear down preview
     runs-on: ubuntu-latest
-    if: |
-      github.event.action == 'closed' &&
-      contains(github.event.pull_request.title, '[gcloud preview]')
+    # Always attempt teardown on close — the cleanup steps are idempotent (each
+    # checks for existence before deleting), so this is safe for PRs that never
+    # had a preview. This avoids the edge case where removing [gcloud preview]
+    # from the title before merging would silently skip teardown and leak resources.
+    if: github.event.action == 'closed'
 
     permissions:
       contents: read

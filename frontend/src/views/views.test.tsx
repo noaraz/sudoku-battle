@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ChallengeNotification } from "./ChallengeNotification";
 import { Timer } from "./Timer";
 import { NumPad } from "./NumPad";
 import { ActionBar } from "./ActionBar";
@@ -552,6 +553,37 @@ describe("Lobby", () => {
     expect(onBattle).toHaveBeenCalled();
   });
 
-  // Challenge notification banner is now rendered at the App level (not inside Lobby)
-  // so it appears on both lobby and battle-menu screens. Tested in App-level tests.
+});
+
+describe("ChallengeNotification", () => {
+  it("shows challenger name with accept and decline buttons", () => {
+    render(
+      <ChallengeNotification
+        fromPlayer="alice"
+        onAccept={vi.fn()}
+        onDecline={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/alice/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument();
+  });
+
+  it("calls onAccept when Accept is clicked", async () => {
+    const onAccept = vi.fn();
+    render(
+      <ChallengeNotification fromPlayer="alice" onAccept={onAccept} onDecline={vi.fn()} />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /accept/i }));
+    expect(onAccept).toHaveBeenCalledOnce();
+  });
+
+  it("calls onDecline when Decline is clicked", async () => {
+    const onDecline = vi.fn();
+    render(
+      <ChallengeNotification fromPlayer="alice" onAccept={vi.fn()} onDecline={onDecline} />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /decline/i }));
+    expect(onDecline).toHaveBeenCalledOnce();
+  });
 });
