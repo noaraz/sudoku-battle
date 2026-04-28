@@ -553,6 +553,27 @@ describe("Lobby", () => {
     expect(onBattle).toHaveBeenCalled();
   });
 
+  it("displays the current player name when playerName is provided", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} playerName="Alice" onLogout={vi.fn()} />);
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("renders a logout button when onLogout is provided", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} playerName="Alice" onLogout={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /logout/i })).toBeInTheDocument();
+  });
+
+  it("calls onLogout when the logout button is clicked", async () => {
+    const onLogout = vi.fn();
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} playerName="Alice" onLogout={onLogout} />);
+    await userEvent.click(screen.getByRole("button", { name: /logout/i }));
+    expect(onLogout).toHaveBeenCalled();
+  });
+
+  it("does not render logout button when onLogout is not provided", () => {
+    render(<Lobby onSolo={vi.fn()} onScores={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: /logout/i })).not.toBeInTheDocument();
+  });
 });
 
 describe("ChallengeNotification", () => {
