@@ -1,0 +1,261 @@
+# Cloud Run preview deployments — triggered by PRs with [gcloud preview] in the title.
+#
+# How it works:
+#   - Add "[gcloud preview]" anywhere in your PR title to get a live preview URL.
+#   - Edit the title to add it later — the workflow re-triggers on title edits.
+#   - When the PR is closed or merged the preview is torn down automatically.
+#   - The preview runs against a Firestore database named pr-{N}, seeded from
+#     a prod export taken at the moment the preview is first created.
+#
+# Requires (one-time manual setup — see docs/PREVIEW_DEPLOYMENTS.md):
+#   - WIF binding on sudoku-battle-deployer that allows refs/pull/* from this repo
+#   - roles/datastore.importExportAdmin on sudoku-battle-deployer
+#   - GCS bucket gs://sudoku-battle-firestore-exports with deployer SA access
+#   - GitHub Actions repository variables: WIF_PROVIDER, WIF_SERVICE_ACCOUNT
+
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, closed]
+
+concurrency:
+  # One preview operation per PR at a time. Cancel in-progress deploy if new
+  # commit arrives (synchronize), but NOT on close — let teardown finish.
+  group: preview-pr-${{ github.event.number }}
+  cancel-in-progress: ${{ github.event.action != 'closed' }}
+
+env:
+  IMAGE: me-west1-docker.pkg.dev/sudoku-battle-494011/sudoku-battle/app
+  REGION: me-west1
+  SERVICE: sudoku-battle
+  PROJECT: sudoku-battle-494011
+  PR_TAG: pr-${{ github.event.number }}
+  DB_NAME: pr-${{ github.event.number }}
+  EXPORT_PATH: gs://sudoku-battle-firestore-exports/pr-${{ github.event.number }}
+
+jobs:
+  # ── Deploy preview ──────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    if: |
+      github.event.action != 'closed' &&
+      contains(github.event.pull_request.title, '[gcloud preview]')
+
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
+
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@7b53cdc2a387814ed14eec026287aac689ae8c9b  # v2.1.9
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f  # v2.2.1
+
+      - name: Authenticate Docker to Artifact Registry
+        run: gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
+
+      - name: Build and push preview image
+        run: |
+          docker build -t ${{ env.IMAGE }}:${{ env.PR_TAG }} .
+          docker push ${{ env.IMAGE }}:${{ env.PR_TAG }}
+
+      - name: Ensure preview Firestore database exists and is seeded
+        run: |
+          # Use a GCS marker object to track whether seeding completed successfully.
+          # Checking only DB existence is not enough — a previous run may have created
+          # the DB but failed during export/import, leaving it empty.
+          SEED_MARKER="${{ env.EXPORT_PATH }}/.seeded"
+
+          if gsutil -q stat "${SEED_MARKER}" 2>/dev/null; then
+            echo "Seed marker found — DB already seeded. Skipping."
+          else
+            echo "No seed marker — creating and seeding preview DB."
+
+            # Get location of the default DB to match for the named DB
+            LOCATION=$(gcloud firestore databases describe \
+              --database='(default)' \
+              --project=${{ env.PROJECT }} \
+              --format='value(locationId)')
+
+            # Create named database (idempotent — ok if it already exists)
+            gcloud firestore databases create \
+              --database=${{ env.DB_NAME }} \
+              --location="${LOCATION}" \
+              --project=${{ env.PROJECT }} 2>/dev/null || \
+            gcloud firestore databases describe \
+              --database=${{ env.DB_NAME }} \
+              --project=${{ env.PROJECT }} \
+              --format='value(name)' > /dev/null
+
+            # Seed from prod: export default DB → GCS → import into named DB
+            gcloud firestore export ${{ env.EXPORT_PATH }} \
+              --database='(default)' \
+              --project=${{ env.PROJECT }} || exit 1
+            gcloud firestore import ${{ env.EXPORT_PATH }} \
+              --database=${{ env.DB_NAME }} \
+              --project=${{ env.PROJECT }} || exit 1
+
+            # Write seed marker so future reruns skip this step
+            echo "seeded $(date -u +%Y-%m-%dT%H:%M:%SZ)" | gsutil cp - "${SEED_MARKER}"
+            echo "Preview DB created and seeded from prod."
+          fi
+
+      - name: Deploy composite indexes to preview Firestore database
+        run: |
+          # Named databases don't inherit indexes from (default) — create them explicitly.
+          # gcloud returns non-zero if the index already exists; || true makes this idempotent.
+          gcloud firestore indexes composite create \
+            --collection-group=challenges \
+            --field-config=field-path=to_player,order=ascending \
+            --field-config=field-path=status,order=ascending \
+            --field-config=field-path=created_at,order=ascending \
+            --database=${{ env.DB_NAME }} \
+            --project=${{ env.PROJECT }} || true
+
+      - name: Deploy preview revision to Cloud Run
+        run: |
+          # ^|^ sets | as the env-var delimiter (CORS_ORIGIN_REGEX contains commas)
+          # CORS regex covers both the main service URL and pr-N tagged revision URLs
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image=${{ env.IMAGE }}:${{ env.PR_TAG }} \
+            --region=${{ env.REGION }} \
+            --service-account=sudoku-battle-runtime@${{ env.PROJECT }}.iam.gserviceaccount.com \
+            --no-traffic \
+            --tag=${{ env.PR_TAG }} \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=3 \
+            --allow-unauthenticated \
+            --port=8080 \
+            --set-env-vars="^|^APP_ENV=production|GCP_PROJECT_ID=${{ env.PROJECT }}|FIRESTORE_DATABASE=${{ env.DB_NAME }}|CORS_ORIGIN_REGEX=https://(pr-[0-9]+---)?sudoku-battle-[a-z0-9]+-zf\\.a\\.run\\.app" \
+            --quiet
+
+      - name: Get preview URL
+        id: preview-url
+        run: |
+          # Parse tagged revision URL from JSON output using jq
+          URL=$(gcloud run services describe ${{ env.SERVICE }} \
+            --region=${{ env.REGION }} \
+            --format=json \
+            | jq -r '
+                .status.traffic[]
+                | select(.tag == "${{ env.PR_TAG }}")
+                | .url
+              ')
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: ${URL}"
+
+      - name: Post preview URL comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY="## Preview deployment ready
+
+          | | |
+          |---|---|
+          | **URL** | ${{ steps.preview-url.outputs.url }} |
+          | **Firestore DB** | \`${{ env.DB_NAME }}\` (seeded from prod at first deploy) |
+          | **Image tag** | \`${{ env.PR_TAG }}\` |
+
+          This preview is updated on every push to this PR. It will be torn down when the PR is closed or merged.
+
+          > **Note:** The preview DB is only seeded from prod once (when first created). Subsequent pushes to this PR redeploy the code but preserve the DB state."
+
+          # Update existing comment if present, otherwise create new one
+          COMMENT_ID=$(gh pr view ${{ github.event.number }} \
+            --json comments \
+            --jq '.comments[] | select(.body | startswith("## Preview deployment ready")) | .databaseId' \
+            | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/${COMMENT_ID} \
+              --method PATCH \
+              --field body="${BODY}"
+          else
+            gh pr comment ${{ github.event.number }} --body "${BODY}"
+          fi
+
+  # ── Tear down preview on PR close ──────────────────────────────────────────
+  teardown:
+    name: Tear down preview
+    runs-on: ubuntu-latest
+    # Always attempt teardown on close — the cleanup steps are idempotent (each
+    # checks for existence before deleting), so this is safe for PRs that never
+    # had a preview. This avoids the edge case where removing [gcloud preview]
+    # from the title before merging would silently skip teardown and leak resources.
+    if: github.event.action == 'closed'
+
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@7b53cdc2a387814ed14eec026287aac689ae8c9b  # v2.1.9
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f  # v2.2.1
+
+      - name: Remove Cloud Run revision tag
+        run: |
+          # Check if the tag exists before trying to remove it
+          TAG_EXISTS=$(gcloud run services describe ${{ env.SERVICE }} \
+            --region=${{ env.REGION }} \
+            --format=json \
+            | jq -r '
+                [.status.traffic[] | select(.tag == "${{ env.PR_TAG }}")] | length
+              ')
+          if [ "$TAG_EXISTS" -gt "0" ]; then
+            gcloud run services update-traffic ${{ env.SERVICE }} \
+              --region=${{ env.REGION }} \
+              --remove-tags=${{ env.PR_TAG }} \
+              --quiet
+            echo "Removed Cloud Run tag ${{ env.PR_TAG }}"
+          else
+            echo "No Cloud Run tag ${{ env.PR_TAG }} found — skipping."
+          fi
+
+      - name: Delete preview Firestore database
+        run: |
+          if gcloud firestore databases describe \
+              --database=${{ env.DB_NAME }} \
+              --project=${{ env.PROJECT }} \
+              --format='value(name)' 2>/dev/null; then
+            gcloud firestore databases delete \
+              --database=${{ env.DB_NAME }} \
+              --project=${{ env.PROJECT }} \
+              --quiet
+            echo "Deleted Firestore database ${{ env.DB_NAME }}"
+          else
+            echo "No Firestore database ${{ env.DB_NAME }} found — skipping."
+          fi
+
+      - name: Delete GCS export objects
+        run: |
+          if gsutil ls ${{ env.EXPORT_PATH }} 2>/dev/null; then
+            gsutil -m rm -r ${{ env.EXPORT_PATH }}
+            echo "Deleted GCS export at ${{ env.EXPORT_PATH }}"
+          else
+            echo "No GCS export found at ${{ env.EXPORT_PATH }} — skipping."
+          fi
+
+      - name: Post teardown comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.number }} \
+            --body "**Preview torn down.** Cloud Run tag \`${{ env.PR_TAG }}\` and Firestore database \`${{ env.DB_NAME }}\` have been deleted."

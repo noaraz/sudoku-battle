@@ -1,113 +1,85 @@
-# /ship — Feature Ship Workflow
+# /ship — Open a PR for the current branch
 
-Run this workflow when a feature branch is ready to ship. Follow the steps in order.
+Run this when a feature branch is ready to merge. Opens a PR with the right
+title and optionally adds `[gcloud preview]` to trigger a live preview deployment.
 
 ---
 
-## 1. Run Tests
-
-Run the full test suite inside Docker:
+## 1. Pre-flight Checks
 
 ```bash
-# Frontend: vitest
-PATH="/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-  docker compose run --rm frontend npx vitest run
-
-# Backend: pytest (--no-deps skips Firestore if tests don't need it)
-PATH="/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-  docker compose run --rm --no-deps backend pytest -q
+git status                      # must be clean (all changes committed)
+git log main..HEAD --oneline    # show commits that will be in the PR
 ```
 
-Present results: total passed/failed, any failures.
+If there are uncommitted changes, stop and ask the user to commit first.
+If there are no commits ahead of main, warn — there may be nothing to ship.
 
 ---
 
-## 2. Type Check + Lint
+## 2. Ask About Preview
 
-```bash
-# Frontend: TypeScript
-PATH="/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-  docker compose run --rm frontend npx tsc --noEmit
+Use `AskUserQuestion` with a single question:
 
-# Backend: mypy
-PATH="/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-  docker compose run --rm --no-deps backend mypy app/
 ```
-
-Fix any errors before continuing.
+Question: "Do you want a Cloud Run preview deployment for this PR?"
+Header: "Preview"
+Options:
+  - label: "Yes — add [gcloud preview]"
+    description: "A live Cloud Run revision will be deployed from this PR, seeded from prod Firestore. URL posted as a PR comment (~3-5 min)."
+  - label: "No — skip preview"
+    description: "Open the PR without a preview. You can always add [gcloud preview] to the title later to trigger one."
+```
 
 ---
 
-## 3. Ask What to Fix (Pre-PR)
+## 3. Push Branch and Open PR
 
-Show the results and ask:
-
-> "All checks pass. Anything to fix before I open the PR?"
-
-Wait for the user's response. Fix requested items, re-run affected checks, then continue.
-
----
-
-## 4. Update Docs
-
-### STATUS.md
-- Mark completed tasks as ✅
-- Update `## Current Focus` to reflect next work
-
-### backend/PLAN.md + frontend/PLAN.md
-- Check off completed tasks
-- Note any deviations from the plan
-
----
-
-## 5. Commit and Open PR
-
-Stage and review:
-```bash
-git add -A
-git status
-git diff --staged --stat
-```
-
-Commit any uncommitted changes:
-```bash
-git commit -m "docs: update STATUS and PLAN after <feature>"
-```
-
-Push branch and open PR:
 ```bash
 git push -u origin HEAD
+```
 
+Then open the PR. If preview was selected, append ` [gcloud preview]` to the title:
+
+```bash
+# With preview:
 gh pr create \
-  --title "feat: <title>" \
+  --title "<descriptive title> [gcloud preview]" \
   --base main \
   --body "$(cat <<'EOF'
 ## Summary
-- <bullet 1>
-- <bullet 2>
-- <bullet 3>
+<describe what this PR does>
 
 ## Test plan
-- [ ] Frontend tests pass: `docker compose run --rm frontend npx vitest run`
-- [ ] Backend tests pass: `docker compose run --rm --no-deps backend pytest -q`
-- [ ] TypeScript clean: `docker compose run --rm frontend npx tsc --noEmit`
-- [ ] mypy clean: `docker compose run --rm --no-deps backend mypy app/`
+- [ ] Tests pass
+- [ ] Manual smoke test
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+
+# Without preview:
+gh pr create \
+  --title "<descriptive title>" \
+  --base main \
+  --body "$(cat <<'EOF'
+## Summary
+<describe what this PR does>
+
+## Test plan
+- [ ] Tests pass
+- [ ] Manual smoke test
+
 EOF
 )"
 ```
 
-Return the PR URL to the user.
+Fill in a descriptive title based on the commits. Do not use "chore: release" — that is for `/release` only.
 
 ---
 
-## 6. Code Review
+## 4. Post-Open
 
-Invoke the code review skill on the PR:
-
-```
-Skill tool: code-review:code-review, args: <PR URL>
-```
-
-Present any issues found and offer to fix them.
+After the PR is open:
+- If preview was selected: tell the user "Preview deployment is starting. Watch for a comment on the PR with the URL (takes ~3-5 minutes)."
+- Print the PR URL.
+- Done — do not monitor CI unless the user asks.

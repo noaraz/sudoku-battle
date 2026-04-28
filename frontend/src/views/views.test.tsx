@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ChallengeNotification } from "./ChallengeNotification";
 import { Timer } from "./Timer";
 import { NumPad } from "./NumPad";
 import { ActionBar } from "./ActionBar";
@@ -552,18 +553,37 @@ describe("Lobby", () => {
     expect(onBattle).toHaveBeenCalled();
   });
 
-  it("shows pending challenge banner when pendingChallenge is set", () => {
+});
+
+describe("ChallengeNotification", () => {
+  it("shows challenger name with accept and decline buttons", () => {
     render(
-      <Lobby
-        onSolo={vi.fn()}
-        onScores={vi.fn()}
-        pendingChallenge={{ challenge_id: "c1", from_player: "Alice" }}
-        onAcceptChallenge={vi.fn()}
-        onDeclineChallenge={vi.fn()}
+      <ChallengeNotification
+        fromPlayer="alice"
+        onAccept={vi.fn()}
+        onDecline={vi.fn()}
       />
     );
     expect(screen.getByText(/alice/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument();
+  });
+
+  it("calls onAccept when Accept is clicked", async () => {
+    const onAccept = vi.fn();
+    render(
+      <ChallengeNotification fromPlayer="alice" onAccept={onAccept} onDecline={vi.fn()} />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /accept/i }));
+    expect(onAccept).toHaveBeenCalledOnce();
+  });
+
+  it("calls onDecline when Decline is clicked", async () => {
+    const onDecline = vi.fn();
+    render(
+      <ChallengeNotification fromPlayer="alice" onAccept={vi.fn()} onDecline={onDecline} />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /decline/i }));
+    expect(onDecline).toHaveBeenCalledOnce();
   });
 });

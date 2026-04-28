@@ -28,7 +28,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
         # cannot accidentally route production Firestore traffic to a dead emulator.
         if settings.app_env == "local" and settings.firestore_emulator_host:
             os.environ["FIRESTORE_EMULATOR_HOST"] = settings.firestore_emulator_host
-        app.state.db = firestore.AsyncClient(project=settings.gcp_project_id)
+        app.state.db = firestore.AsyncClient(
+            project=settings.gcp_project_id,
+            database=settings.firestore_database,
+        )
         yield
     finally:
         await app.state.db.close()

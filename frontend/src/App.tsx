@@ -7,6 +7,7 @@ import { useRoom } from "./viewmodels/useRoom";
 import { useTheme } from "./viewmodels/useTheme";
 import { recordTime } from "./utils/bestTimes";
 import { BattleMenu } from "./views/BattleMenu";
+import { ChallengeNotification } from "./views/ChallengeNotification";
 import { Countdown } from "./views/Countdown";
 import { GameScreen } from "./views/GameScreen";
 import { LeaderboardScreen } from "./views/LeaderboardScreen";
@@ -48,7 +49,7 @@ export default function App() {
   }, [screen]);
 
   useEffect(() => {
-    if (screen === "lobby") room.startPolling();
+    if (screen === "lobby" || screen === "battle-menu") room.startPolling();
     else room.stopPolling();
   }, [screen]);
 
@@ -121,20 +122,32 @@ export default function App() {
         />
       )}
 
+      {/* Challenge notification — shown on lobby and battle-menu so receiver sees it
+          even if they navigated away from the lobby to challenge someone else */}
+      {room.pendingChallenge && (screen === "lobby" || screen === "battle-menu") && (
+        <ChallengeNotification
+          fromPlayer={room.pendingChallenge.from_player}
+          onAccept={async () => {
+            try {
+              const data = await room.acceptChallenge(room.pendingChallenge!.challenge_id);
+              setDifficulty(data.difficulty as Difficulty);
+              setSeed(data.seed);
+              room.connectWs(data.room_id);
+              setScreen("waiting");
+            } catch {
+              // acceptChallenge already cleared pendingChallenge on success;
+              // on failure the notification stays so the user can retry or decline.
+            }
+          }}
+          onDecline={() => room.declineChallenge(room.pendingChallenge!.challenge_id)}
+        />
+      )}
+
       {screen === "lobby" && (
         <Lobby
           onSolo={handleSolo}
           onScores={() => setScreen("leaderboard")}
           onBattle={() => setScreen("battle-menu")}
-          pendingChallenge={room.pendingChallenge}
-          onAcceptChallenge={async (challengeId) => {
-            const data = await room.acceptChallenge(challengeId);
-            setDifficulty(data.difficulty as Difficulty);
-            setSeed(data.seed);
-            room.connectWs(data.room_id);
-            setScreen("waiting");
-          }}
-          onDeclineChallenge={room.declineChallenge}
         />
       )}
 
